@@ -1,0 +1,57 @@
+---
+title: "Interesting Forecasting Applications with R"
+author: "Nilüfer Çetin  - IE360 - Fall 2020"
+
+---
+```{r,echo=FALSE,results="hide"}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+
+
+#### 1.  [Time series forecasting using ARIMA models](https://blogs.oracle.com/datascience/introduction-to-forecasting-with-arima-in-r)
+
+  This example is important because it introduces the forecasting methodology using ARIMA models in R. The steps are examining data, decomposing data, stationary testing, autocorrelations and choosing model order, fitting an ARIMA model, evaluating and iterating
+  
+  ***
+
+#### 2.  [An all time classic : Linear Regression](http://r-statistics.co/Linear-Regression.html)
+
+  This method is very useful in the case the variable to be forecasted can be written as a linear combination of one or more variables plus an error term
+	
+$Y = β1 + β2X1 + β3X2 + ... + ϵ$
+	
+**lm()** method can be used to determine the coefficients and statistical significance of regressor variables. Forecast can be carried by applying the resulting formula.
+
+  ***
+
+#### 3.   [Forecasting using Decision Trees in R](https://www.datacamp.com/community/tutorials/decision-trees-R)
+	
+Decision trees consist of many nodes of each represent a condition upon one of the regressor variables. The tree is seperated into branches in each node depending on the binary value of condition. 
+	
+At the end of each leaf is indicated the value or class of the response variable, depending on the type of decision tree (regression or classification)
+	
+Trees are created by the **tree()** function of tree library and forecasting is done via **predict()** function. Several algorithms such as *bagging*, *bootstrapping* etc. can be used to boost effectiveness of decision trees.
+
+***
+
+#### 4.   [Exponential Smoothing (ETS) Forecasting](https://www.geeksforgeeks.org/exponential-smoothing-in-r-programming/#:~:text=The%20Exponential%20Smoothing%20is%20a,functions%20assign%20exponentially%20decreasing%20weights.)
+	
+In this method, data is smoothed to decrease high-frequency noise. The forecast is performed by assigning exponentially decreasing weights to regressor values as they get older. Depending on the trend and seasonality the types of ETS differ.
+	
+The weights are determined by the parameter *alpha*.
+
+The functions **ses()** and **holt()** can be used to perform different types of ETS, **accuracy()** function is used to compare between forecast and test data.
+
+***
+
+#### 5.   [Another Smoothing Technique : Simple Moving Average using R](https://bookdown.org/kochiuyu/technical-analysis-with-r-second-edition/simple-moving-average-sma.html)
+
+This easy technique is usually used for forecasting in trading and stock markets. Given the time series of the value to be forecasted and parameter n, the forecasted value is calculated simply by the formula,
+
+$Yt = (Yt-1 + Yt-2 + ... + Yt-n) / n$
+	
+It is simply the average of the last n values. The **sma()** function of the **smooth** package finds the *optimal n value* using AIC to compare various models.
+
+***
