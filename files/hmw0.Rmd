@@ -12,27 +12,36 @@ opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
 #### 1.  [Time series forecasting using ARIMA models](https://blogs.oracle.com/datascience/introduction-to-forecasting-with-arima-in-r)
 
-  This example is important because it introduces the forecasting methodology using ARIMA models in R. The steps are examining data, decomposing data, stationary testing, autocorrelations and choosing model order, fitting an ARIMA model, evaluating and iterating.
+  This example is important because it introduces the forecasting methodology using ARIMA models in R. The steps are;
+  
+* examining data, 
+* decomposing data, 
+* stationary testing, 
+* autocorrelations and choosing model order, 
+* fitting an ARIMA model, 
+* evaluating and 
+* iterating.
   
   ***
 
 #### 2.  [An all time classic : Linear Regression](http://r-statistics.co/Linear-Regression.html)
 
-  This method is very useful in the case the variable to be forecasted can be written as a linear combination of one or more variables plus an error term
+  This method is very useful in the case the variable to be forecasted can be written as a *linear combination* of one or more variables plus an error term
 	
 $Y = β1 + β2X1 + β3X2 + ... + ϵ$
+
 	
-**lm()** method can be used to determine the coefficients and statistical significance of regressor variables. Forecast can be carried by applying the resulting formula.
+If there is significant correlation between two variables linear regression might be a suitable model for forecasting. The extent of correlation can be understood by using **cor.test()** function or simply plotting the variables against each other by **plot()** command. **lm()** method can be used to determine the coefficients (β2, β3, ...),  intercept (β1) and statistical significance of regressor variables. Forecast can be carried by applying the resulting formula to the test data.
 
   ***
 
 #### 3.   [Forecasting using Decision Trees in R](https://www.datacamp.com/community/tutorials/decision-trees-R)
 	
-Decision trees consist of many nodes of each represent a condition upon one of the regressor variables. The tree is seperated into branches in each node depending on the binary value of condition. 
+Decision trees consist of many nodes that each represent a condition upon one of the regressor variables. The tree is seperated into branches in each node depending on the binary value of condition. 
 	
-At the end of each leaf is indicated the value or class of the response variable, depending on the type of decision tree (regression or classification)
+At the end of each leaf is indicated the value or class of the response variable, depending on the type of decision tree (regression or classification). Decision tree is also a powerful machine learning approach that is useful in image classificaiton and exploratory data analysis.
 	
-Trees are created by the **tree()** function of tree library and forecasting is done via **predict()** function. Several algorithms such as *bagging*, *bootstrapping* etc. can be used to boost effectiveness of decision trees.
+Trees are created by the **tree()** function of **tree** library and forecasting is done via **predict()** function. Several algorithms such as *bagging*, *bootstrapping* etc. can be used to boost effectiveness of decision trees.
 
 ***
 
@@ -48,10 +57,17 @@ The functions **ses()** and **holt()** can be used to perform different types of
 
 #### 5.   [Another Smoothing Technique : Simple Moving Average using R](https://bookdown.org/kochiuyu/technical-analysis-with-r-second-edition/simple-moving-average-sma.html)
 
-This easy technique is usually used for forecasting in trading and stock markets. Given the time series of the value to be forecasted and parameter n, the forecasted value is calculated simply by the formula,
+This easy technique is usually used for demand forecasting, trading and stock markets. Simple moving average is also used in data analysis as there are experts today looking at several daily averages of infections to understand the situation of COVID-19 in different countries.
+
+Given the time series of the value to be forecasted and parameter n, the forecasted value at time t is calculated simply by the formula,
 
 $Yt = (Yt-1 + Yt-2 + ... + Yt-n) / n$
-	
-It is simply the average of the last n values. The **sma()** function of the **smooth** package finds the *optimal n value* using AIC to compare various models.
+
+It is simply the average of the last n values that was recorded in the last n time-moments. The **sma()** function of the **smooth** package finds the *optimal n value* using AIC (Akaike's Information Criteria) to compare various models.
+
+***
+
+### References
+[Markdown in R Cheatsheet](https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf)
 
 ***

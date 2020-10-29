@@ -370,21 +370,30 @@ summary {
 
 <div id="time-series-forecasting-using-arima-models" class="section level4">
 <h4>1. <a href="https://blogs.oracle.com/datascience/introduction-to-forecasting-with-arima-in-r">Time series forecasting using ARIMA models</a></h4>
-<p>This example is important because it introduces the forecasting methodology using ARIMA models in R. The steps are examining data, decomposing data, stationary testing, autocorrelations and choosing model order, fitting an ARIMA model, evaluating and iterating.</p>
-<hr />
+<p>This example is important because it introduces the forecasting methodology using ARIMA models in R. The steps are;</p>
+<ul>
+<li><p>examining data,</p></li>
+<li><p>decomposing data,</p></li>
+<li><p>stationary testing,</p></li>
+<li><p>autocorrelations and choosing model order,</p></li>
+<li><p>fitting an ARIMA model,</p></li>
+<li><p>evaluating and</p></li>
+<li><p>iterating.</p>
+<hr /></li>
+</ul>
 </div>
 <div id="an-all-time-classic-linear-regression" class="section level4">
 <h4>2. <a href="http://r-statistics.co/Linear-Regression.html">An all time classic : Linear Regression</a></h4>
-<p>This method is very useful in the case the variable to be forecasted can be written as a linear combination of one or more variables plus an error term</p>
+<p>This method is very useful in the case the variable to be forecasted can be written as a <em>linear combination</em> of one or more variables plus an error term</p>
 <p><span class="math inline">\(Y = β1 + β2X1 + β3X2 + ... + ϵ\)</span></p>
-<p><strong>lm()</strong> method can be used to determine the coefficients and statistical significance of regressor variables. Forecast can be carried by applying the resulting formula.</p>
+<p>If there is significant correlation between two variables linear regression might be a suitable model for forecasting. The extent of correlation can be understood by using <strong>cor.test()</strong> function or simply plotting the variables against each other by <strong>plot()</strong> command. <strong>lm()</strong> method can be used to determine the coefficients (β2, β3, …), intercept (β1) and statistical significance of regressor variables. Forecast can be carried by applying the resulting formula to the test data.</p>
 <hr />
 </div>
 <div id="forecasting-using-decision-trees-in-r" class="section level4">
 <h4>3. <a href="https://www.datacamp.com/community/tutorials/decision-trees-R">Forecasting using Decision Trees in R</a></h4>
-<p>Decision trees consist of many nodes of each represent a condition upon one of the regressor variables. The tree is seperated into branches in each node depending on the binary value of condition.</p>
-<p>At the end of each leaf is indicated the value or class of the response variable, depending on the type of decision tree (regression or classification)</p>
-<p>Trees are created by the <strong>tree()</strong> function of tree library and forecasting is done via <strong>predict()</strong> function. Several algorithms such as <em>bagging</em>, <em>bootstrapping</em> etc. can be used to boost effectiveness of decision trees.</p>
+<p>Decision trees consist of many nodes that each represent a condition upon one of the regressor variables. The tree is seperated into branches in each node depending on the binary value of condition.</p>
+<p>At the end of each leaf is indicated the value or class of the response variable, depending on the type of decision tree (regression or classification). Decision tree is also a powerful machine learning approach that is useful in image classificaiton and exploratory data analysis.</p>
+<p>Trees are created by the <strong>tree()</strong> function of <strong>tree</strong> library and forecasting is done via <strong>predict()</strong> function. Several algorithms such as <em>bagging</em>, <em>bootstrapping</em> etc. can be used to boost effectiveness of decision trees.</p>
 <hr />
 </div>
 <div id="exponential-smoothing-ets-forecasting" class="section level4">
@@ -396,9 +405,15 @@ summary {
 </div>
 <div id="another-smoothing-technique-simple-moving-average-using-r" class="section level4">
 <h4>5. <a href="https://bookdown.org/kochiuyu/technical-analysis-with-r-second-edition/simple-moving-average-sma.html">Another Smoothing Technique : Simple Moving Average using R</a></h4>
-<p>This easy technique is usually used for forecasting in trading and stock markets. Given the time series of the value to be forecasted and parameter n, the forecasted value is calculated simply by the formula,</p>
+<p>This easy technique is usually used for demand forecasting, trading and stock markets. Simple moving average is also used in data analysis as there are experts today looking at several daily averages of infections to understand the situation of COVID-19 in different countries.</p>
+<p>Given the time series of the value to be forecasted and parameter n, the forecasted value at time t is calculated simply by the formula,</p>
 <p><span class="math inline">\(Yt = (Yt-1 + Yt-2 + ... + Yt-n) / n\)</span></p>
-<p>It is simply the average of the last n values. The <strong>sma()</strong> function of the <strong>smooth</strong> package finds the <em>optimal n value</em> using AIC to compare various models.</p>
+<p>It is simply the average of the last n values that was recorded in the last n time-moments. The <strong>sma()</strong> function of the <strong>smooth</strong> package finds the <em>optimal n value</em> using AIC (Akaike’s Information Criteria) to compare various models.</p>
+<hr />
+</div>
+<div id="references" class="section level3">
+<h3>References</h3>
+<p><a href="https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf">Markdown in R Cheatsheet</a></p>
 <hr />
 </div>
 

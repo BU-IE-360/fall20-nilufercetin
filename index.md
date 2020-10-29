@@ -1,4 +1,4 @@
-# Nilufer Cetin Progress Journal for IE360
+# Nilufer Cetin Progress Journal in IE360
 
 ## Week 0 / Homework 0 (Oct 27)
 
