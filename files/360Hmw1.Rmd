@@ -1,0 +1,93 @@
+---
+title: "Homework1"
+author: "Nilüfer Çetin  - IE360 - Fall 2020"
+date: "07 11 2020"
+output: html_document
+---
+#Data Visualization and Google Trends on Three Different Measures from Turkey
+##1) Monthly Housing Data of Turkey over 2013-2020
+Blah blah these are going to be included,
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(lubridate)
+library(RColorBrewer)
+
+konut = read_xls("C:/Users/ŞAHİN ÇETİN/Desktop/konut.xls")
+satilik = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/satilik.csv")
+
+```
+
+```{r include=FALSE}
+dates = ymd(paste(row.names(satilik)[2:204], "-15"),"%Y-%m-%d")
+dates = dates[-204]
+satilik = as.data.frame(satilik[-1,])
+satilik = satilik%>%mutate(Date = dates)
+colnames(satilik)[1] = "SearchVolume"
+satilik = satilik %>% filter(year(Date)>=2013)
+satilik = satilik %>% filter(Date < "2020-10-15")
+satilik = satilik %>% mutate(SearchVolume = as.numeric(SearchVolume))
+
+konut = konut[1:85,]
+konut = data.frame(konut)
+
+konut = konut %>% select_if(~!all(is.na(.)))
+konut = konut[-2,]
+
+
+konut = konut[,-c(seq(14, 98, by = 13), 102:105)]
+years = c(rep("2013",12), rep("2014",12), rep("2015",12), rep("2016",12),
+          rep("2017",12), rep("2018",12), rep("2019",12), rep("2020",9))
+konut[1, 2:94] = years
+colnames(konut)[1] = "Cities"
+
+konut = konut %>% filter(is.na(Cities) | Cities == "Türkiye" | Cities == "Ankara" | Cities == "İstanbul")
+konut.son = data.frame(Loc=NA, Year=NA, Month=NA, Sold=NA)
+
+for(i in 3:5){
+  for(j in 2:94){
+    konut.son = rbind(konut.son, c(konut$Cities[i], konut[1,j], konut[2,j], konut[i,j]))
+  }
+}
+konut.son = konut.son[-1,]
+konut.son = konut.son %>% mutate(Month = match(substr(Month, 1, 3), month.abb))
+konut.son = konut.son %>% mutate(Year = as.numeric(Year))
+konut.son = konut.son %>% mutate(Date = ymd(paste(Year, Month, 15)))
+konut.son = konut.son %>% mutate(Sold = as.numeric(Sold))
+konut.son = konut.son[,-c(2:3)]
+```
+
+
+```{r echo=FALSE}
+ggplot(konut.son, aes(x=Date, y=Sold)) +
+  geom_line(size = 1, aes(color= Loc, group=Loc)) +
+  labs(title = "Number of Houses Sold in Turkey over 2013-2020 observed Monthly", 
+       x = "Date",
+       y = "Houses Sold") +
+  scale_x_date(date_breaks = "6 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+<!-- ## R Markdown -->
+
+<!-- This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. -->
+
+<!-- When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this: -->
+
+<!-- ```{r cars} -->
+<!-- summary(cars) -->
+<!-- ``` -->
+
+<!-- ## Including Plots -->
+
+<!-- You can also embed plots, for example: -->
+
+<!-- ```{r pressure, echo=FALSE} -->
+<!-- plot(pressure) -->
+<!-- ``` -->
+
+<!-- Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot. -->
