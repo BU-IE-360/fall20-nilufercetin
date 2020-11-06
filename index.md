@@ -6,4 +6,4 @@
 
 ## Week 1 / Homework 1 (Nov 7)
 
-[Here](files/hmw1.html) are my interesting 3 data visualization examples using R !
+[Here](files/360Hmw1.html) are my interesting 3 data visualization examples using R !
