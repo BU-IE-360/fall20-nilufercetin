@@ -4,12 +4,20 @@ author: "Nilüfer Çetin  - IE360 - Fall 2020"
 date: "07 11 2020"
 output: html_document
 ---
-#Data Visualization and Google Trends on Three Different Measures from Turkey
-##1) Monthly Housing Data of Turkey over 2013-2020
-Blah blah these are going to be included,
+#   Data Visualization and Google Trends on Three Different Measures from Turkey
+##    1) Monthly Housing Data of Turkey over 2013-2020
 
-```{r setup, include=TRUE}
-knitr::opts_chunk$set(echo = TRUE)
+This measure’s data set consists of monthly reported values of number of houses sold in Turkey. The data is taken between 2013 and 2020, however since the year 2020 has not ended yet, unfortunately, the last observation was September 2020. Aside from monthly observations, the number of houses sold were separated to cities where the house sold was located. More information about the data can be found in the [TUIK web-site source](https://data.tuik.gov.tr/Kategori/GetKategori?p=Insaat-ve-Konut-116). 
+
+Since there were numbers for every city in Turkey, the data was huge and to narrow it down “Total Number of Houses Sold in Turkey” is selected as the measure. After the necessary manipulations, the dataset that include number of monthly sold houses in Ankara, İstanbul and Turkey total were obtained. If we look at the head of this data frame,
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
 library(ggplot2)
 library(dplyr)
 library(readxl)
@@ -18,7 +26,7 @@ library(RColorBrewer)
 
 konut = read_xls("C:/Users/ŞAHİN ÇETİN/Desktop/konut.xls")
 satilik = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/satilik.csv")
-
+emlak = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Emlak.csv")
 ```
 
 ```{r include=FALSE}
@@ -30,6 +38,13 @@ colnames(satilik)[1] = "SearchVolume"
 satilik = satilik %>% filter(year(Date)>=2013)
 satilik = satilik %>% filter(Date < "2020-10-15")
 satilik = satilik %>% mutate(SearchVolume = as.numeric(SearchVolume))
+
+emlak = as.data.frame(emlak[-1,])
+emlak = emlak%>%mutate(Date = dates)
+colnames(emlak)[1] = "SearchVolume"
+emlak = emlak %>% filter(year(Date)>=2013)
+emlak = emlak %>% filter(Date < "2020-10-15")
+emlak = emlak %>% mutate(SearchVolume = as.numeric(SearchVolume))
 
 konut = konut[1:85,]
 konut = data.frame(konut)
@@ -60,8 +75,17 @@ konut.son = konut.son %>% mutate(Sold = as.numeric(Sold))
 konut.son = konut.son[,-c(2:3)]
 ```
 
+```{r echo=FALSE, include=TRUE}
+head(konut.son)
+```
 
-```{r echo=FALSE}
+
+
+It can be seen that there is a date column that shows every month’s 15th day. Normally, these values are collected for the whole month and what is meant by 15-01-2013 is the time horizon January 2013 as a month. This date is added since it is easier to plot with the full date and the interpretation of the end or the beginning of the month can be misleading. Moreover, although the aim is to visualize Turkey as a whole, İstanbul and Ankara were taken as separate locations to see the extent of how the trends in these megacities are in relation to Turkey. 
+
+If we plot all the observations with respect to time,
+
+```{r echo=FALSE, include=TRUE}
 ggplot(konut.son, aes(x=Date, y=Sold)) +
   geom_line(size = 1, aes(color= Loc, group=Loc)) +
   labs(title = "Number of Houses Sold in Turkey over 2013-2020 observed Monthly", 
@@ -72,6 +96,68 @@ ggplot(konut.son, aes(x=Date, y=Sold)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+We can see that there are oscillations throughout the time. The general trend seems to be somewhat increasing. It can also be seen that the trends in İstanbul and Ankara show a great deal of parallel to Turkey. In fact, the spikes in these cities are clearer to be understood than Turkey.  In most of the past years, there can be seen an increase in number of houses sold in autumn months that eventually resulted in a greater spike in December. However, followed by this increase there seems sudden decreases in the number of houses sold in January. This pattern seems to be repeating over 2013 till 2019 with changing amplitudes. These can be results of housing interests, credits or regulations that start in at the beginning of each year. Apart from these two cities, there also can be detected sharp spikes in spring and summer in Turkey.  This may be due to the fact that people preferring to buy summer houses for vocational purposes in cities with beaches. The fact that this trend was not seen in İstanbul and Ankara is supporting this hypothesis, thought it needs further investigation.
+
+There are more ups and downs in much more greater amplitudes in 2019 and 2020.  Although the same trends are existent, judging from the graph there are more houses sold in 2019. In 2020, there seems a great decrease followed by greater increase in the number of houses sold. In the last few years, it is always said that “housing is one of the main areas of Turkish economy where many transactions occur”. The numbers are evidence to this. The sudden crash of the market can easily be explained by the global pandemic and lockdowns in country. There are also the same movements in Ankara and İstanbul.
+
+If we observe the year by year histograms each constitute of 12 observations,
+
+```{r echo=FALSE, include=TRUE}
+ggplot(konut.son%>%filter(Loc == "Türkiye"), aes(x=Sold)) +
+  geom_histogram(aes(y=..density..), colour="orange", fill="lightyellow", bins = 30)+ 
+  geom_density(alpha=.2, fill="lightpink", colour="darkorange") + theme_minimal() +
+  labs(title = "Year by Year Histograms of Number of Houses Sold in Turkey over 2013-2020 observed Monthly", 
+       x = "Number of Houses Sold in a Month",
+       y = "Density") +
+  facet_wrap(~year(Date), ncol=3)
+```
+
+It can be seen that in the first few years the distribution can more easily be fitted into the normal distribution. As the time has passed, the distributions seem to be shifted to the right, showing the increasing trend in number of houses sold. In the past two years, the number range has become wider and the fitting curve is almost flat. This is also in line with the sudden increases and decreases in the number. 
+
+```{r echo=FALSE, include=TRUE}
+ggplot(konut.son%>%filter(Loc == "Türkiye"), aes(x=Date, y=Sold, group=year(Date))) +
+  geom_boxplot(aes(fill= factor(year(Date)))) +
+  scale_fill_brewer(palette = "BuPu", name = "Years") +
+  labs(title = "Boxplots of Number of Houses Sold in Turkey over 2013-2020 Year by Year", 
+       x = "Year Dates",
+       y = "Number of Houses Sold") +
+  scale_x_date(date_breaks = "1 year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_minimal()
+```
+
+With the boxplot, the story behind the numbers can be seen more clearly. It is obvious that until 2018, there has been a slightly increasing trend in the housing market. However, in the last three years the numbers have become more spread and the increasing trend seems to come to an end. It is only in this year that the market have recovered from that point. Still, the wide range of numbers point to an instability in the market and the reasons behind this phenomena can further be investigated. 
+
+As Google Trends search keywords “satılık” and “emlak” is selected. “Satılık” means “for sale” in Turkish. It is a widely used word in internet searches when people are looking for home. “Emlak” means “real estate agency”.  The data provided by Google Trends for this keyword was also monthly. When the data is plotted in boxplot,
+
+```{r echo=FALSE, include=TRUE}
+ggplot(satilik, aes(x=Date, y=SearchVolume, group=year(Date))) +
+  geom_boxplot(aes(fill= factor(year(Date)))) +
+  scale_fill_brewer(palette = "BuPu", name = "Years") +
+  labs(title = "Boxplots of Search Volumes of <Satılık> in Turkey over 2013-2020 Year by Year", 
+       x = "Year Dates",
+       y = "Search Volumes") +
+  scale_x_date(date_breaks = "1 year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_minimal()
+```
+
+It can be easily observed that the search volume of the word “satılık” is positively correlated with the number of houses sold in Turkey. The movements and changes in range are quite alike. It is only sometimes that the changes in the volume are more obvious than the changes in number of houses sold. This may be due to the fact that “for sale” keyword is used for many other assets such as cars, land etc. So this keyword may represent a more general area of transactions in Turkey economy.
+
+```{r echo=FALSE, include=TRUE}
+ggplot(emlak, aes(x=Date, y=SearchVolume, group=year(Date))) +
+  geom_boxplot(aes(fill= factor(year(Date)))) +
+  scale_fill_brewer(palette = "BuPu", name = "Years") +
+  labs(title = "Boxplots of Search Volumes of <Emlak> in Turkey over 2013-2020 Year by Year", 
+       x = "Year Dates",
+       y = "Search Volumes") +
+  scale_x_date(date_breaks = "1 year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_minimal()
+
+```
+
+The keyword “emlak” does not seem to show much correlation to the number of houses sold in Turkey over years. In fact, there seems an ever-going decrease in the search volume that continued with movements similar to the last years’ movements in the number of houses sold. The decreasing trend is mysterious and it might be due to the changing preferences of people buying houses since nowadays the web-sites and applications serving for this purpose are used widely.
 <!-- ## R Markdown -->
 
 <!-- This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. -->
