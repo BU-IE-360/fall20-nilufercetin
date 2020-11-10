@@ -18,47 +18,30 @@ knitr::opts_chunk$set(
 	warning = FALSE,
 	include = FALSE
 )
+##Necessary libraries
 library(ggplot2)
 library(dplyr)
 library(readxl)
 library(lubridate)
 library(RColorBrewer)
 
+##Datasets needed for the first measure
 konut = read_xls("C:/Users/ŞAHİN ÇETİN/Desktop/konut.xls")
 satilik = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/satilik.csv")
 emlak = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Emlak.csv")
 ```
 
 ```{r include=FALSE}
-dates = ymd(paste(row.names(satilik)[2:204], "-15"),"%Y-%m-%d")
-dates = dates[-204]
-satilik = as.data.frame(satilik[-1,])
-satilik = satilik%>%mutate(Date = dates)
-colnames(satilik)[1] = "SearchVolume"
-satilik = satilik %>% filter(year(Date)>=2013)
-satilik = satilik %>% filter(Date < "2020-10-15")
-satilik = satilik %>% mutate(SearchVolume = as.numeric(SearchVolume))
-
-emlak = as.data.frame(emlak[-1,])
-emlak = emlak%>%mutate(Date = dates)
-colnames(emlak)[1] = "SearchVolume"
-emlak = emlak %>% filter(year(Date)>=2013)
-emlak = emlak %>% filter(Date < "2020-10-15")
-emlak = emlak %>% mutate(SearchVolume = as.numeric(SearchVolume))
-
+##necessary manipulations of first measure set
 konut = konut[1:85,]
 konut = data.frame(konut)
-
 konut = konut %>% select_if(~!all(is.na(.)))
 konut = konut[-2,]
-
-
 konut = konut[,-c(seq(14, 98, by = 13), 102:105)]
 years = c(rep("2013",12), rep("2014",12), rep("2015",12), rep("2016",12),
           rep("2017",12), rep("2018",12), rep("2019",12), rep("2020",9))
 konut[1, 2:94] = years
 colnames(konut)[1] = "Cities"
-
 konut = konut %>% filter(is.na(Cities) | Cities == "Türkiye" | Cities == "Ankara" | Cities == "İstanbul")
 konut.son = data.frame(Loc=NA, Year=NA, Month=NA, Sold=NA)
 
@@ -73,6 +56,26 @@ konut.son = konut.son %>% mutate(Year = as.numeric(Year))
 konut.son = konut.son %>% mutate(Date = ymd(paste(Year, Month, 15)))
 konut.son = konut.son %>% mutate(Sold = as.numeric(Sold))
 konut.son = konut.son[,-c(2:3)]
+
+##dates that may be needed for trend data of both measure sets
+dates = ymd(paste(row.names(satilik)[2:204], "-15"),"%Y-%m-%d")
+dates = dates[-204]
+
+##trend data manipulation function for the first two measures trends
+trendFolder = function(x, year){
+  x = as.data.frame(x[-1,])
+  x = x%>%mutate(Date = dates)
+  colnames(x)[1] = "SearchVolume"
+  x = x %>% filter(year(Date)>=year)
+  x = x %>% filter(Date < "2020-10-15")
+  x = x %>% mutate(SearchVolume = as.numeric(SearchVolume))
+  return(x)
+}
+
+##trend data manipulation of first measure
+satilik = trendFolder(satilik, 2013)
+emlak = trendFolder(emlak, 2013)
+
 ```
 
 ```{r echo=FALSE, include=TRUE}
@@ -105,10 +108,12 @@ If we observe the year by year histograms each constitute of 12 observations,
 ```{r echo=FALSE, include=TRUE}
 ggplot(konut.son%>%filter(Loc == "Türkiye"), aes(x=Sold)) +
   geom_histogram(aes(y=..density..), colour="orange", fill="lightyellow", bins = 30)+ 
-  geom_density(alpha=.2, fill="lightpink", colour="darkorange") + theme_minimal() +
+  geom_density(alpha=.2, fill="lightpink", colour="darkorange") +
   labs(title = "Year by Year Histograms of Number of Houses Sold in Turkey over 2013-2020 observed Monthly", 
        x = "Number of Houses Sold in a Month",
        y = "Density") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_wrap(~year(Date), ncol=3)
 ```
 
@@ -122,8 +127,9 @@ ggplot(konut.son%>%filter(Loc == "Türkiye"), aes(x=Date, y=Sold, group=year(Dat
        x = "Year Dates",
        y = "Number of Houses Sold") +
   scale_x_date(date_breaks = "1 year") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
 ```
 
 With the boxplot, the story behind the numbers can be seen more clearly. It is obvious that until 2018, there has been a slightly increasing trend in the housing market. However, in the last three years the numbers have become more spread and the increasing trend seems to come to an end. It is only in this year that the market have recovered from that point. Still, the wide range of numbers point to an instability in the market and the reasons behind this phenomena can further be investigated. 
@@ -138,8 +144,9 @@ ggplot(satilik, aes(x=Date, y=SearchVolume, group=year(Date))) +
        x = "Year Dates",
        y = "Search Volumes") +
   scale_x_date(date_breaks = "1 year") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
 ```
 
 It can be easily observed that the search volume of the word “satılık” is positively correlated with the number of houses sold in Turkey. The movements and changes in range are quite alike. It is only sometimes that the changes in the volume are more obvious than the changes in number of houses sold. This may be due to the fact that “for sale” keyword is used for many other assets such as cars, land etc. So this keyword may represent a more general area of transactions in Turkey economy.
@@ -152,12 +159,129 @@ ggplot(emlak, aes(x=Date, y=SearchVolume, group=year(Date))) +
        x = "Year Dates",
        y = "Search Volumes") +
   scale_x_date(date_breaks = "1 year") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
 
 ```
 
 The keyword “emlak” does not seem to show much correlation to the number of houses sold in Turkey over years. In fact, there seems an ever-going decrease in the search volume that continued with movements similar to the last years’ movements in the number of houses sold. The decreasing trend is mysterious and it might be due to the changing preferences of people buying houses since nowadays the web-sites and applications serving for this purpose are used widely.
+
+
+##    2) Monthly Number of Tourists visiting Turkey over 2013-2020
+
+This measure’s dataset consists of monthly reported values of total number of tourists coming to Turkey in the specified month. The data is collected over the years 2012-2020. The details and preference of chosen date are the same as the first measure set. The data is taken from the TUIK web-site source.
+
+```{r include=FALSE}
+##Datasets needed for the second measure
+turist = read_xls("C:/Users/ŞAHİN ÇETİN/Desktop/turist.xls")
+antalya = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Antalya.csv")
+bodrum = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Bodrum.csv")
+cesme = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Cesme.csv")
+
+##necessary manipulations of second measure set
+cellSeq = seq(3, 27, by = 3)
+turist.son = data.frame(Year=NA, Month=NA, Tourists=NA)
+for(i in cellSeq){
+  for(j in 1:12){
+    turist.son = rbind(turist.son, c((2011 + (i/3)), month.abb[j], as.integer(turist[j+5, i])))
+  }
+}
+
+turist.son = turist.son[-1,]
+turist.son = turist.son[-c(106:108),]
+turist.son$Tourists[is.na(turist.son$Tourists)] = 0
+turist.son = turist.son %>% mutate(Date = ymd(paste(Year, Month, 15)))
+turist.son = turist.son %>% mutate(Tourists = as.numeric(Tourists))
+turist.son = turist.son %>% mutate(Month = match(Month, month.abb))
+
+##trend data manipulation of second measure
+antalya = trendFolder(antalya, 2012) %>% mutate(Loc = "Antalya")
+bodrum = trendFolder(bodrum, 2012) %>% mutate(Loc = "Bodrum")
+cesme = trendFolder(cesme, 2012) %>% mutate(Loc = "Cesme")
+totalCities = rbind(antalya, bodrum, cesme)
+
+```
+
+With the necessary manipulations the head of the data frame,
+
+```{r echo=FALSE, include=TRUE}
+head(turist.son)
+```
+
+If we plot the observations with respect to time,
+
+```{r echo=FALSE, include=TRUE}
+ggplot(turist.son, aes(x=Date, y=Tourists)) +
+  geom_line(color = "purple", size = 1, aes(group=1)) +
+  labs(title = "Number of Tourist Visits to Turkey over 2012-2020 observed Monthly", 
+       x = "Date",
+       y = "Number of Tourists Visited") +
+  scale_x_date(date_breaks = "6 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It can easily be seen that there is a high extent of seasonality in the data. There are more tourists coming in the summer months and Turkey is the least attractive for the tourists in winter months. This kind of pattern is just like the average temperatures seen in Turkey. As a result, it can be claimed that what makes Turkey a tourist attraction can be milder temperatures, fresh air and summer vibes around the coastlines. There is also an increasing trend that is broken by the year 2016. This exception to the rule might be because of the tense Turkey and Russian diplomatic relations and the air the failed coup attempt in July 20016 created in Turkey. The crash followed by a weak increase in 2020 is surely the result of lockdown and pandemic. 
+
+To look at the trends within years we can plot each year by a different line with respect to months,
+
+```{r echo=FALSE, include=TRUE}
+ggplot(turist.son, aes(x=Month, y=Tourists)) +
+  geom_line(size = 1, aes(color=Year, group=Year)) +
+  labs(title = "Number of Tourist Visits to Turkey observed Monthly in Years", 
+       x = "Months",
+       y = "Number of Tourists Visited") +
+  scale_x_continuous(breaks = c(1:12)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This plot shows that in the last years, the patterns between months have become more and more profound. Moreover, judging from the first two months the year 2020 have signaled the higher tourists coming. It can also be seen that year 2016 started as a normal year but starting from April the numbers did not grow as much as can be expected, this was when the diplomatic relations were the tensest. Consequently, that suggests the earlier idea of why the numbers have dropped in 2016.
+
+If we draw histograms,
+
+```{r echo=FALSE, include=TRUE}
+ggplot(turist.son, aes(x=Tourists)) +
+  geom_histogram(aes(y=..density..), colour="blue", fill="lightblue")+ 
+  geom_density(alpha=.4, fill="purple", colour="black") + theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Year by Year Histograms of Tourists Visits to Turkey over 2012-2020 observed Monthly", 
+       x = "Number of Tourists coming to Turkey in a Month",
+       y = "Density") +
+  facet_wrap(~year(Date), ncol=3)
+```
+
+The monthly number of coming tourists are very spread throughout the months in almost all years. As the years go by, it seems that the bins have slightly shifted to right indicating an increase in most of the months.
+
+```{r echo=FALSE, include=TRUE}
+ggplot(turist.son, aes(x=Date, y=Tourists, group=year(Date))) +
+  geom_boxplot(aes(fill= factor(year(Date)))) +
+  scale_fill_brewer(palette = "PuOr", name = "Years") +
+  labs(title = "Boxplots of Tourist Visits to Turkey over 2012-2020 Year by Year", 
+       x = "Year Dates",
+       y = "Number of Tourists Visited") +
+  scale_x_date(date_breaks = "1 year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+By drawing the box-plots, the previous results can be drawn.  If we draw the boxplots of monthly search volumes of some of the famous holiday resorts in Turkey such as Antalya, Bodrum and Çeşme;
+
+```{r echo=FALSE, include=TRUE}
+ggplot(totalCities, aes(x=Date, y=SearchVolume, group=year(Date))) +
+  geom_boxplot(aes(fill= factor(year(Date)))) +
+  scale_fill_brewer(palette = "PuOr", name = "Years") +
+  labs(title = "Boxplots of Search Volumes of various Holiday Resorts in Turkey over 2012-2020 Year by Year", 
+       x = "Year Dates",
+       y = "Search Volumes") +
+  scale_x_date(date_breaks = "1 year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~Loc, ncol=3)
+```
+
+It can be seen from these graphs that despite all other things, Antalya is still more famous and known more widely than the other two important holiday locations. Moreover, the changes in number of tourists can be more easily seen in the changes of search volume of Antalya throughout the time. In addition to these, the search volume of “Çeşme” is wider than the other two locations. This may indicate a pattern where the interest in the city changes substantially over time with seasons.
 <!-- ## R Markdown -->
 
 <!-- This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. -->
