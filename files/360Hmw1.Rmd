@@ -282,6 +282,122 @@ ggplot(totalCities, aes(x=Date, y=SearchVolume, group=year(Date))) +
 ```
 
 It can be seen from these graphs that despite all other things, Antalya is still more famous and known more widely than the other two important holiday locations. Moreover, the changes in number of tourists can be more easily seen in the changes of search volume of Antalya throughout the time. In addition to these, the search volume of “Çeşme” is wider than the other two locations. This may indicate a pattern where the interest in the city changes substantially over time with seasons.
+
+
+##    3) Weekly Closing Prices of PETKM Stocks over March 2018 - September 2020
+
+```{r include=FALSE}
+petkm = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Petkm.csv")
+petrol = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/petrol.csv")
+petkim = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/petkim.csv")
+
+petkm = petkm[c(1,2)]
+colnames(petkm) = c("Date", "lastPrice")
+petkm = petkm %>% mutate(Date = dmy(gsub(".", "-", Date, fixed=TRUE)))
+petkm = petkm %>% mutate(lastPrice = as.numeric(gsub(",", ".", lastPrice)))
+petkm = petkm[order(petkm$Date),]
+
+datesPart = seq(petkm$Date[1], petkm$Date[131], length = 7)
+weeks = rownames(petrol)
+
+partition = function(x){
+ j = 1
+ x = x %>% mutate("Interval" = rep(0))
+for(i in 1:6){
+  for(k in j:131){
+    if(x$Date[k] %within% interval(datesPart[i], datesPart[i+1])){
+      x$Interval[k] = i
+    }else {
+      j = k
+      break
+    } 
+  }
+}
+ return (x)
+}
+
+trendFolder2 = function(x){
+  x = x%>%mutate(Date = weeks)
+  x = as.data.frame(x[-1,])
+  colnames(x)[1] = "SearchVolume"
+  x = x %>% filter(Date >= "2018-03-01" & Date < "2020-09-01")
+  x = x %>% mutate(SearchVolume = as.numeric(SearchVolume))
+  return(x)
+}
+
+petkm = partition(petkm)
+petrol = partition(trendFolder2(petrol)%>%mutate(Date=ymd(Date)))
+petkim = partition(trendFolder2(petkim)%>%mutate(Date=ymd(Date)))
+
+```
+
+
+```{r echo=FALSE, include=TRUE}
+head(petkm)
+```
+
+
+```{r echo=FALSE, include=TRUE}
+ggplot(petkm, aes(x=Date, y=lastPrice)) +
+  geom_line(color = "darkorange", size = 1, aes(group=1)) +
+  labs(title = "Weekly Last Price of PETKM Stocks over March 2018 - September 2020", 
+       x = "Date",
+       y = "Last Price (Turkish Liras)") +
+  scale_x_date(date_breaks = "2 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r echo=FALSE, include=TRUE}
+ggplot(petkm, aes(x=lastPrice)) +
+  geom_histogram(aes(y=..density..), colour="orange", fill="pink")+ 
+  geom_density(alpha=.4, fill="red", colour="brown") + theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Histograms of Weekly Closing Prices of PETKM Stocks in TL Seperated into 6 Intervals over 2018-2020", 
+       x = "Weekly Closing Prices of PETKM Stocks in Turkish Liras",
+       y = "Density") +
+  facet_wrap(~Interval, ncol=3)
+
+
+ggplot(petkm, aes(x=Date, y=lastPrice, group=Interval)) +
+  geom_boxplot(aes(fill= factor(Interval))) +
+  scale_fill_brewer(palette = "RdYlBu", name = "Intervals") +
+  labs(title = "Boxplots of Weekly Closing Prices of PETKM Stocks in TL Seperated into 6 Intervals over 2018-2020", 
+       x = "Dates",
+       y = "Price (TL)") +
+  scale_x_date(date_breaks = "2 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r echo=FALSE, include=TRUE}
+ggplot(petkim, aes(x=Date, y=SearchVolume, group=Interval)) +
+  geom_boxplot(aes(fill= factor(Interval))) +
+  scale_fill_brewer(palette = "RdYlBu", name = "Intervals") +
+  labs(title = "Boxplots of Weekly Search Volumes of <<PETKM>> Seperated into 6 Intervals over 2018-2020", 
+       x = "Dates",
+       y = "Search Volume)") +
+  scale_x_date(date_breaks = "2 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r echo=FALSE, include=TRUE}
+ggplot(petrol, aes(x=Date, y=SearchVolume, group=Interval)) +
+  geom_boxplot(aes(fill= factor(Interval))) +
+  scale_fill_brewer(palette = "RdYlBu", name = "Intervals") +
+  labs(title = "Boxplots of Weekly Search Volumes of <<Petrol>> Seperated into 6 Intervals over 2018-2020", 
+       x = "Dates",
+       y = "Search Volume") +
+  scale_x_date(date_breaks = "2 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 <!-- ## R Markdown -->
 
 <!-- This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. -->
