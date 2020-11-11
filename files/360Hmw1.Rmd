@@ -170,7 +170,7 @@ The keyword “emlak” does not seem to show much correlation to the number of 
 
 ##    2) Monthly Number of Tourists visiting Turkey over 2013-2020
 
-This measure’s dataset consists of monthly reported values of total number of tourists coming to Turkey in the specified month. The data is collected over the years 2012-2020. The details and preference of chosen date are the same as the first measure set. The data is taken from the TUIK web-site source.
+This measure’s dataset consists of monthly reported values of total number of tourists coming to Turkey in the specified month. The data is collected over the years 2012-2020. The details and preference of chosen date are the same as the first measure set. The data is taken from the [TUIK web-site source](https://data.tuik.gov.tr/Kategori/GetKategori?p=Egitim,-Kultur,-Spor-ve-Turizm-105).
 
 ```{r include=FALSE}
 ##Datasets needed for the second measure
@@ -286,20 +286,29 @@ It can be seen from these graphs that despite all other things, Antalya is still
 
 ##    3) Weekly Closing Prices of PETKM Stocks over March 2018 - September 2020
 
+This measure’s dataset includes weekly closing prices of PETKM stocks over March 2018 till September 2020. PETKM is a private company that makes production using petroleum, natural gas and other chemically similar substances. These substances are important for the Turkish industry just like many other countries over the world. However, since there are not much of the sources in the lands of Turkey, this is a huge problem that is frequently discussed. As a consequence, it might be an interesting idea to investigate the stocks of PETKM over time. 
+
+Because of the financial data having very unique qualities and high volatility, the selected data collection horizon for this measure is weekly. To perform easier operations, the total time horizon is selected to be shorter than other measures as March 2018 till September 2020. The data is gethered from [investing.com source](https://tr.investing.com/equities/petkim-historical-data).
+
+
 ```{r include=FALSE}
+##data sets needed for the third measure
 petkm = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Petkm.csv")
 petrol = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/petrol.csv")
 petkim = read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/petkim.csv")
 
+##necessary manipulations
 petkm = petkm[c(1,2)]
 colnames(petkm) = c("Date", "lastPrice")
 petkm = petkm %>% mutate(Date = dmy(gsub(".", "-", Date, fixed=TRUE)))
 petkm = petkm %>% mutate(lastPrice = as.numeric(gsub(",", ".", lastPrice)))
 petkm = petkm[order(petkm$Date),]
 
+##necessary date measures to manipulate and partition the data sets
 datesPart = seq(petkm$Date[1], petkm$Date[131], length = 7)
 weeks = rownames(petrol)
 
+##function to divide data sets with respect to time
 partition = function(x){
  j = 1
  x = x %>% mutate("Interval" = rep(0))
@@ -316,6 +325,7 @@ for(i in 1:6){
  return (x)
 }
 
+##function to manipulate trend data
 trendFolder2 = function(x){
   x = x%>%mutate(Date = weeks)
   x = as.data.frame(x[-1,])
@@ -325,17 +335,21 @@ trendFolder2 = function(x){
   return(x)
 }
 
+##last manipulations
 petkm = partition(petkm)
 petrol = partition(trendFolder2(petrol)%>%mutate(Date=ymd(Date)))
 petkim = partition(trendFolder2(petkim)%>%mutate(Date=ymd(Date)))
 
 ```
 
+After the required manipulations on the dataset,
 
 ```{r echo=FALSE, include=TRUE}
 head(petkm)
 ```
 
+The interval is added to facilitate the partition of the data into smaller sets. There are 6 partitions in the set each of which constitute of 5 consecutive months’ data.
+If we plot the stock prices,
 
 ```{r echo=FALSE, include=TRUE}
 ggplot(petkm, aes(x=Date, y=lastPrice)) +
@@ -346,6 +360,18 @@ ggplot(petkm, aes(x=Date, y=lastPrice)) +
   scale_x_date(date_breaks = "2 months") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It can be seen that there is a high extent of volatility in the prices throughout these 30 months. There is a decreasing trend started by a sharp fall in April 2018. After that, although at some points the prices seem to go up the trend prevails. The sharp increase at July 2018 might be linked to the rise in prices of natural gas. Whereas, the decrease in March 2019 can be related to extraction of petroleum news in Turkey. There are very ups and downs and these patterns can be result of a lot of complex situations, news and other human perceptions. All in all, it is not easy to explain the economic phenomena.
+
+Starting from 2020, the stock prices seem to be recovering from their decreasing trend. However, the sharp decrease in late February and March may be related to international economy shutting down because of the pandemic situation. In spite of this, the prices have increased just after that so it might be that the pandemic has triggered a sudden need in one or more of the products that PETKM produces. One last comment can be about the increase in prices in late August 2020. These increase is possibly the result of Turkey finding natural gas in Black Sea. 
+
+The movements in stock prices is a complex concept that can be partly explained by mathematical equations. However, these are well beyond the scope of this work.
+
+Before moving on with the histograms, it might be a good idea to look at the dates where partitions occur,
+
+```{r echo=FALSE, include=TRUE}
+datesPart
 ```
 
 
@@ -359,7 +385,11 @@ ggplot(petkm, aes(x=lastPrice)) +
        y = "Density") +
   facet_wrap(~Interval, ncol=3)
 
+```
 
+From these visualizations, it can be seen that at least one huge change in prices took place in the first interval. After that point, the weekly closing prices are closer to each other in other time horizons. Through the second, third, fourth and fifth intervals; the minimum and maximum values tend to decrease so it can be said that the stocks of the company did not perform well. In the last interval, the distribution is a little different than the previous ones with two highly frequent values on each end.
+
+```{r echo=FALSE, include=TRUE}
 ggplot(petkm, aes(x=Date, y=lastPrice, group=Interval)) +
   geom_boxplot(aes(fill= factor(Interval))) +
   scale_fill_brewer(palette = "RdYlBu", name = "Intervals") +
@@ -369,9 +399,25 @@ ggplot(petkm, aes(x=Date, y=lastPrice, group=Interval)) +
   scale_x_date(date_breaks = "2 months") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 ```
 
+From the boxplots, same ideas can be drawn. There is a wide range of values for the first interval. For the next intervals, values are closer to each other indicating stability. The decreasing trend in the prices seem to continue till the last interval with fifth interval having higher mean but longer down tail and an outlier value. The last interval has wider range of prices with higher mean and probably more instability. 
+
+For this measure the word selected on Google Trends were “petroleum” and the company’s own name “PETKM”. If we draw the box plots with weekly values partitioned over the same intervals,
+
+```{r echo=FALSE, include=TRUE}
+ggplot(petrol, aes(x=Date, y=SearchVolume, group=Interval)) +
+  geom_boxplot(aes(fill= factor(Interval))) +
+  scale_fill_brewer(palette = "RdYlBu", name = "Intervals") +
+  labs(title = "Boxplots of Weekly Search Volumes of <<Petroleum>> Seperated into 6 Intervals over 2018-2020", 
+       x = "Dates",
+       y = "Search Volume") +
+  scale_x_date(date_breaks = "2 months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It can be seen that for a long time, the search volume for “petroleum” has been stagnant in a narrow range.  With the year 2020 however, there is an increase in the search volumes accompanied by higher outliers. These increases might be related to rise and drop in the national prices or other global news, newly formed trade regulations etc. The increase in the last interval can be the result of Turkey finding natural gas, another likely substance that is used for similar purposes. Still, the movements in the search volume does not bear much relation to the stock prices of PETKM.
 
 ```{r echo=FALSE, include=TRUE}
 ggplot(petkim, aes(x=Date, y=SearchVolume, group=Interval)) +
@@ -385,35 +431,12 @@ ggplot(petkim, aes(x=Date, y=SearchVolume, group=Interval)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+The search volumes of “PETKM” are shown to be stagnant too. In the fourth and fifth intervals there are increases in the search volume that are followed by a decrease with huge outliers. The changes in search volumes do not show any parallel to the closing prices. However, outliers may indicate higher demand and as a result higher stock prices. Although, more detail and knowledge is needed to reach a clear conclusion.
 
-```{r echo=FALSE, include=TRUE}
-ggplot(petrol, aes(x=Date, y=SearchVolume, group=Interval)) +
-  geom_boxplot(aes(fill= factor(Interval))) +
-  scale_fill_brewer(palette = "RdYlBu", name = "Intervals") +
-  labs(title = "Boxplots of Weekly Search Volumes of <<Petrol>> Seperated into 6 Intervals over 2018-2020", 
-       x = "Dates",
-       y = "Search Volume") +
-  scale_x_date(date_breaks = "2 months") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
 
-<!-- ## R Markdown -->
-
-<!-- This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. -->
-
-<!-- When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this: -->
-
-<!-- ```{r cars} -->
-<!-- summary(cars) -->
-<!-- ``` -->
-
-<!-- ## Including Plots -->
-
-<!-- You can also embed plots, for example: -->
-
-<!-- ```{r pressure, echo=FALSE} -->
-<!-- plot(pressure) -->
-<!-- ``` -->
-
-<!-- Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot. -->
+##    References
+[TUIK Web Site](https://data.tuik.gov.tr/)
+  •   [Investing.com](https://tr.investing.com/)
+  •   [R lubridate Cheat Sheet](https://evoldyn.gitlab.io/evomics-2018/ref-sheets/R_lubridate.pdf)
+  •   [Data Visualization](http://www.sthda.com/english/)
+  •   [Other Questions](https://stackoverflow.com/)
