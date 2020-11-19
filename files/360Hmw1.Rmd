@@ -433,6 +433,7 @@ ggplot(petkim, aes(x=Date, y=SearchVolume, group=Interval)) +
 
 The search volumes of “PETKM” are shown to be stagnant too. In the fourth and fifth intervals there are increases in the search volume that are followed by a decrease with huge outliers. The changes in search volumes do not show any parallel to the closing prices. However, outliers may indicate higher demand and as a result higher stock prices. Although, more detail and knowledge is needed to reach a clear conclusion.
 
+#    For the code and RMD document of this report [click.](https://bu-ie-360.github.io/fall20-nilufercetin/files/360Hmw1.Rmd)
 
 ##    References
 [TUIK Web Site](https://data.tuik.gov.tr/)
