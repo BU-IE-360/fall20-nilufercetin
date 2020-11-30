@@ -1,0 +1,123 @@
+---
+title: "Untitled"
+author: "Nilüfer Çetin  - IE360 - Fall 2020"
+date: "30 11 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## A Study on the Link between Several Measures from the Turkish Housing Market
+
+  Over the last few years in Turkey, it is frequently mentioned that the housing and construction has become an important sector that is used to support the fragile economy. There are a lot of undergoing mass housing projects that are aimed to target various potential buyers. Moreover, people nowadays usually do not own a house just for accommodation; investment, seasonal tourism and renting has become popular reasons for people to buy residences. Although there is an ever increasing number of housing projects and potential customers, it is not sensible to think that all of these customers have the enough amount of money to fund this transaction. In fact, taking out a loan from a bank is a widely used way to buy any kind of housing. This loan is usually referred to as “housing credit”. 
+
+  Of course the banks do not give the housing credit right away. There are several procedures such as inspection of the house of interest, analysis of economic situation and assets of the customer etc. Once the credit is taken, the bank applies an interest rate on the back payment of principal. The plan to pay the principal back can be divided into different time durations and the interest rate upon each payment can be announced using these durations such as monthly, quarterly and annually. The interest rates that the banks specify are dependent on various factors such as the inflation rate, exchange rates or country’s economic decisions. Nevertheless, the mechanics behind the determination of interest rates on housing credits are very complicated and are well beyond the scope of this work.
+
+  Although it is extremely hard for a regular citizen without a specific interest or education related to economy to understand how the interest rates on credits are computed, it is almost natural for anybody to look at the interest rates while deciding on whether or how much to take loan from a bank. As there are a lot of people using housing credit to buy residences, it is logical to assume that the interest rate applied on the housing credits may affect the funding preference of house buyers. Consequently, it can be claimed that the amount of housing credits taken can be somehow correlated with the interest rate on that specific period. Moreover, as there are not many choices to fund such an expensive asset, housing, whether or not a person is able to get a loan can directly affect a person’s decision to buy a house. As a result, it can be suggested that number of houses sold in a period can be predicted or indicated by the amount of housing credits taken which can also closely be related with the rate of interest on pay back. The research question this study aims to find out can be stated as “Are there any correlation, or to what extent, between number of houses sold, the total amount of housing credits taken and the interest rate applied on those credits on Turkey?”
+
+  To find an answer to the question of interest, data related to several measures from Turkey over a specific period will be analyzed. In the next part of this study, several different data visualization techniques as well as correlation analyses will be used. These visualizations and analyses will be conducted using different combinations of measures over different time periods or horizons. Therefore, a number of data manipulation techniques will be used as this is one of the main objectives of the study. 
+
+  The data is taken from Electronic Data Delivery System on [EVDS](https://evds2.tcmb.gov.tr/). It is assumed that a period from January 2014 till September 2020 can be long enough to offer a solid analysis. Furthermore, these consecutive years are selected so that it should be easier to explain outlier values or unexpected phenomena since they will be up-to-date from both the researcher’s and reader’s perspective.  The data taken are gathered in a monthly fashion. Secondly, there are three different measures of datasets. In one of the datasets, the total number of houses sold all over Turkey in a specific month is stated. In the other dataset, the total amount of housing credits in million TLs in a specific month are listed. These are the credits that are taken from Deposit Banks. Though there are other types of banks lending housing credit they do this in relatively very small amounts so it can easily be assumed that addition of these amounts might not make any difference in the analysis. The last dataset covers the interest rate on housing credits in Turkey month by month. 
+
+  Before the analysis, it is necessary to manipulate the data in a more understandable and easy to work format. Since the data are taken from the same web page, they are more or less in very similar forms. Although there are a few extra manipulations, most of the data is manipulated using this function, for more detailed information the reader can take a look at the rmd file provided in the appendices.
+
+
+```{r cars, include=FALSE}
+library(data.table)
+library(lubridate)
+library(ggplot2)
+library(readxl)
+library(dplyr)
+```
+
+```{r, include=TRUE, warning=FALSE}
+manipulator = function(x, type){
+  x = as.data.table(x)
+  x = x[1:83,1:2]
+  x[,2] = as.numeric(unlist(x[,2]))
+  x = x[, 1 := ymd(paste0(unlist(x[,1]), "-15"))]
+  x = x[Tarih < "2020-10-15"]
+  colnames(x) = c("Date", "Amount")
+  if(type == "Credit"){
+    x[,2] = x[,2]/1000
+  }
+  x$Type = rep(type)
+  return (x)
+}
+
+amountSold = manipulator(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/KonutSatis.xlsx"), "Sold")
+creditsTaken = manipulator(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/KonutKredi.xlsx"), "Credit")
+interestonCredit = manipulator(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/KonutKrediFaiz.xlsx"), "Interest")
+allCombined = rbind(amountSold, creditsTaken, interestonCredit)
+```
+
+  After the necessary operations, one of the dataset can be viewed, the others are very much similar. It should also be noted that the addition of the day component has become a need to facilitate the visualization of the time series data. For the rest of this study, it is kindly requested from the reader to think of the 15th day of a month as a representation of the whole monthly data.
+
+```{r, include=TRUE, echo=FALSE}
+head(amountSold, 10)
+```
+
+
+  There is also a bigger dataset combining all values with their respective dates. In this dataset the type column refers to the original measure of the amount. This is also created to provide a better visualization of the data.
+  
+```{r, include=TRUE, echo=FALSE}
+str(allCombined, 10)
+```
+  
+  
+  After these steps, the data over January 2014 – September 2020 can be plotted. In the next plot, the total number of houses sold and the total amounts of credit taken in million TLs are represented by lines. The choice of million as a multiplier is to provide an effective demonstration of these two measures using the same scale. Also, in the upcoming plot the interest rate is visualized using a bar plot so that the reader can keep in mind that it is a percentage rather than an amount. 
+    
+```{r, include=TRUE, echo=FALSE}
+ggplot(allCombined[Type=="Interest"], aes(x = Date, y = Amount*2600, group = 1)) +
+  geom_bar(fill = "pink", stat="identity") +
+  geom_text(aes(label = sprintf("%.1f", Amount), y= Amount*2600), angle = 90, vjust = 0.5, hjust = 0, size = 2.5)+
+  geom_line(data = allCombined[Type != "Interest"], aes(x=Date, y=Amount, color= Type, group=Type), 
+            size = 1) + 
+  labs(title = "Several Measures of Housing in Turkey between 2014-2020 Reported Monthly", 
+                             x = "Date",
+                             y = "Amount") +
+  scale_x_date(date_breaks = "5 months") +
+  ylim(0, 260000) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+  
+  
+  When the plot is examined, it can be seen that there has been volatility in number of houses sold between 2014 and 2019. The numbers seem to change a lot without any obvious cyclic or seasonal pattern. In the same period, it can also be claimed that there is an increase in the amount of credits taken. It might be logical to relate this increasing trend to the general inflation in that period. The housing prices might have elevated and people in return might have applied for higher amount of loans. This is also a period where the interest rate upon housing credit changes between values of %10 and %14. From this period, it cannot be clearly understood that whether there is any relationship between these three measures since each measure seems to move in small amounts, there are not any kind of unexpected behavior. Because the time period is long enough, it can be stated that this is the normal situation of Turkish Housing Sector and in this state, these measures do not show any kind of trend with respect to one another. However, more elaborate analysis via different type of visualizations and correlation tests can still reveal a weak degree of relatedness in the upcoming parts. 
+
+  Moving on, starting from 2019 the situation of the market seem to change a lot. In the last few months of 2018, there starts a continuous increase in the interest rate. Moreover, it is in the same period that the amount of credits taken start to decrease. It can be stated, with trivial knowledge of economy, that the sudden increase in the interest rate may have triggered a response in the amount of housing credits taken. Housing customers in this period probably took lower amount of credits or there were smaller number of people funding housing via credit. To answer this question, it might be a good idea to inspect the number of houses sold in the same period. In the last months of 2018, the number of houses sold have fluctuated a lot. However, it can be understood that the housing market have gone into a recession and was not able to come out of it immediately. So, it can be stated that the climbing interest rates have affected the amount of housing credits and number of houses sold. However, the number of houses sold seem to respond to interest rate slower than the response of amount of credits taken. The explanation of these situation with the reasons underlying can be explained by use of more advanced knowledge of economy so it will not be included in this study. 
+
+  Continuing the analysis in 2019, it can be claimed that the interest rate applied on housing credits starts decreasing eventually. However, in the first half of this year, the number of houses sold and the amount of loans taken are still comparably below of their usual level. It is only when the interest rate falls below to %15, both credits and number of houses sold starts increasing again. This ratio can be seen very magical at first, however it should be noted that the change from prior levels to %15 is sudden and very gradual. Hence, there might be several reasons triggering the change in housing preferences. Some of these can be listed. First of all, this sudden decrease could have resulted in a shock on the customer side, alongside with speculations and fear of facing higher interest rates again people might have thought that it can be a suitable time to take credit and buy housing. Secondly, there might be one or several third variables that affect all the measures of interest together. These could be for example exchange rates or inflation rates. Due to the fact that there are a huge number of measures that are closely correlated with the state of economy, it is very much hard to explain whether a relationship is a result of causation or just correlation. 
+
+  Beyond the first half of 2019, the number of houses sold and the amount of housing credits taken have increased a lot in size, jumping to levels which are never seen before. Although the interest on the housing credit seem to be rather stable between normal levels, these movements in other measures can be explained by people postponing to buy house in late 2018 to July 2019. However, there are not much data points to test this claim as the market have been hit hard by the ongoing pandemic in 2020. The decreasing number of houses sold accompanied by rather stagnant amount of credits taken can be easily linked to the lockdowns and general downfall of economy in spring 2020. After that, by imposing a comparably small rate of interest on credit, the authorities seem to manage reviving the housing market resulting in an increase in credits taken. However, September 2020 shows a relatively different situation, though it would not be suitable to comment on this since it is not known whether this is a one-time thing or a new trend.
+
+  To inspect for relation between measures yearly boxplots can be visualized,
+  
+```{r, include=TRUE, echo=FALSE}
+ggplot(allCombined, aes(x=Date, y=Amount, group=year(Date))) +
+  geom_boxplot(aes(fill= factor(year(Date)))) +
+  scale_fill_brewer(palette = "YlOrRd", name = "Years") +
+  labs(title = "Boxplots of Several Measures of Housing in Turkey between 2014-2020 Reported Monthly", 
+       x = "Year Dates",
+       y = "Amounts") +
+  scale_x_date(date_breaks = "1 year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_grid(rows = vars(Type), scales = "free")
+
+```
+  
+  
+    
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, include=FALSE, echo=FALSE}
+plot(pressure)
+```
+
+##Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code ##that generated the plot.
