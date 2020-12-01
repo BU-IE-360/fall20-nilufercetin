@@ -66,7 +66,58 @@ head(amountSold, 10)
 str(allCombined, 10)
 ```
   
+  After those manipulations, it would be useful to visualize the measures in histogram to check for any assumption related to distribution or other statistics. To serve this purpose, year by year histograms of measures constituting of 12 different reported values is chosen as an appropriate format. 
   
+```{r, include=TRUE, echo=FALSE}
+ggplot(allCombined%>%filter(Type == "Sold"), aes(x=Amount)) +
+  geom_histogram(aes(y=..density..), colour="blue", fill="lightskyblue", bins = 30)+ 
+  geom_density(alpha=.2, fill="purple", colour="brown") +
+  labs(title = "Year by Year Histograms of Number of Houses Sold in Turkey over 2014-2020 observed Monthly", 
+       x = "Number of Houses Sold in a Month",
+       y = "Density") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~year(Date), ncol=3)
+
+
+```
+  
+ 
+  As can be seen from the plot, between years 2014 till 2019, the monthly number of houses sold can be somehow fitted into a normal distribution. Some of these plots are skewed and there mean values and variances do seem to fluctuate over the years. However, the samples along with their related statistics do not seem to drag into a specific direction over time. In the last two years, the variance is higher and the monthly number of houses sold seem to scatter into both directions. This major difference in the samples should be analyzed with the help of coming visualizations and tests.
+  
+```{r, include=TRUE, echo=FALSE}
+ggplot(allCombined%>%filter(Type == "Interest"), aes(x=Amount)) +
+  geom_histogram(aes(y=..density..), colour="mistyrose", fill="lightpink", bins = 30)+ 
+  geom_density(alpha=.2, fill="indianred", colour="darkorange") +
+  labs(title = "Year by Year Histograms of Interest Rate on Housing Credits in Turkey over 2014-2020 observed Monthly", 
+       x = "Interest Rate applied on Housing Credit in a Month",
+       y = "Density") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~year(Date), ncol=3)
+
+```
+  
+  By looking at the yearly histograms of interest rates applied on housing credit, it can easily be assumed that the samples collected in a monthly manner can be fitted in to a normal distribution in the period 2014-2018. Moreover, the rates in those years are pretty close to each other suggesting that the distribution can be stationary in some sense. Nevertheless in 2018 and 2019, there are drastic changes in the interest rates. It is obvious that the rates went up and down in greater amounts in these two consecutive years. In year 2020, the monthly reported rates seem to be exhibiting their old behaviors. These patterns will be analyzed in detail in the next parts.
+  
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(allCombined%>%filter(Type == "Credit"), aes(x=Amount)) +
+  geom_histogram(aes(y=..density..), colour="blue", fill="lightcyan", bins = 30)+ 
+  geom_density(alpha=.2, fill="purple", colour="navy") +
+  labs(title = "Year by Year Histograms of Amount of Housing Credits Taken in Turkey over 2013-2020 observed Monthly", 
+       x = "Total Amount of Housing Credits Taken in a Month in 1 million TRY",
+       y = "Density") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~year(Date), ncol=3)
+```
+
+  
+  The year by year histograms of total amount of housing credits taken (in million TRYs) in a month seem to be revealing a trend. As opposed to the previous measures, the amount of housing credits taken can almost always be represented via a normal distribution, except this year 2020. However, the mean values are subject to a considerable increase. Furthermore, the monthly reported values in 2018 and 2019 are very much closer to each other compared to previous years. Although the assumption of normality still holds, this pattern along with the rule breaker 2020, should be inspected in detail.
+
+  By those plotted histograms, it is evident that there is an increasing trend in amount of credits. More importantly, in the last three years there are unexpected behaviors regarding all of the measures. Before jumping into conclusions, incorporating a more detailed time dimension should be useful.
+
   After these steps, the data over January 2014 – September 2020 can be plotted. In the next plot, the total number of houses sold and the total amounts of credit taken in million TLs are represented by lines. The choice of million as a multiplier is to provide an effective demonstration of these two measures using the same scale. Also, in the upcoming plot the interest rate is visualized using a bar plot so that the reader can keep in mind that it is a percentage rather than an amount. 
     
 ```{r, include=TRUE, echo=FALSE}
@@ -111,6 +162,13 @@ ggplot(allCombined, aes(x=Date, y=Amount, group=year(Date))) +
 ```
   
   
+  From the boxplots, it can be seen that the measures monthly total amounts of housing credit taken and the monthly total number of houses sold do not bear much variance over 2014-2018. In fact, although there is a permanent increasing pattern in amount of housing credits the monthly observations within a year are very close to each other. The amount of hoses sold however does not seem to be increasing or decreasing over time. 
+
+  Though the monthly observations of interest rate seem to be separated to comparably wider intervals, the reader should keep in mind that the scales of the three measures are different from each other. As of the year 2018 however, the situation of interest rate upon housing credit have changed. The monthly reported values are scattered in a wider interval that year. The fact that there is not any sign of unexpected behavior or observation in housing credits or number of houses sold in 2018 might support the thesis that those measures are affected by the change in interest rate after some time. Moreover, the boxplot of 2019 interest rates also point a highly volatile period. By looking at the more-widely-scattered sold house numbers and the sudden decrease in observed amounts of housing credit in 2019, it could also be suggested that those two measures might have affected by the persistent high interest rates. Although both of these thesis are possible, again it should be noted that there are probably many other factors related to economy that are triggering change or volatility in some or all of the measures.
+
+  In year 2020 there is a completely different scenario. Interest rates imposed on housing credits are lower than ever. Nevertheless, there is still high volatility in number of houses sold accompanied by an ever large variability in amount of housing credits taken. This situation may lead to the conclusion that there are fluctuations in the housing market that are not potentially caused by the rate of interest. Still, these are several assumptions and it should be taken into account that because of their nature, boxplots are inadequate in terms of revealing any causation that have took place within a relatively short range of time. To be clearer, it is not understandable the relative movements and responses of measures with respect one another other occurring in a year. 
+
+ 
     
 ## Including Plots
 
