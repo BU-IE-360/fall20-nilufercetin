@@ -438,6 +438,76 @@ amountSold = manipulator(read_xlsx(&quot;C:/Users/ŞAHİN ÇETİN/Desktop/KonutS
 <p>From the boxplots, it can be seen that the measures monthly total amounts of housing credit taken and the monthly total number of houses sold do not bear much variance over 2014-2018. In fact, although there is a permanent increasing pattern in amount of housing credits the monthly observations within a year are very close to each other. The amount of hoses sold however does not seem to be increasing or decreasing over time.</p>
 <p>Though the monthly observations of interest rate seem to be separated to comparably wider intervals, the reader should keep in mind that the scales of the three measures are different from each other. As of the year 2018 however, the situation of interest rate upon housing credit have changed. The monthly reported values are scattered in a wider interval that year. The fact that there is not any sign of unexpected behavior or observation in housing credits or number of houses sold in 2018 might support the thesis that those measures are affected by the change in interest rate after some time. Moreover, the boxplot of 2019 interest rates also point a highly volatile period. By looking at the more-widely-scattered sold house numbers and the sudden decrease in observed amounts of housing credit in 2019, it could also be suggested that those two measures might have affected by the persistent high interest rates. Although both of these thesis are possible, again it should be noted that there are probably many other factors related to economy that are triggering change or volatility in some or all of the measures.</p>
 <p>In year 2020 there is a completely different scenario. Interest rates imposed on housing credits are lower than ever. Nevertheless, there is still high volatility in number of houses sold accompanied by an ever large variability in amount of housing credits taken. This situation may lead to the conclusion that there are fluctuations in the housing market that are not potentially caused by the rate of interest. Still, these are several assumptions and it should be taken into account that because of their nature, boxplots are inadequate in terms of revealing any causation that have took place within a relatively short range of time. To be clearer, it is not understandable the relative movements and responses of measures with respect one another other occurring in a year.</p>
+<p>After these visualizations, running some correlation tests may yield more specific, although less detailed, explanations of the relations between the selected measures. As a first step, it would be sensible to apply correlation tests on the whole data points together. Keeping this in mind, in the upcoming three correlation test results combinations of the selected measures over the years 2014-2020 as one sample will be analyzed. Once these are calculated, it should be useful to inspect the correlations that are sampled using one or few several years and discussing any extreme or unforeseen result.</p>
+<p>As it is generally known that a lot of people are funding the house they buy via housing credit, the correlation between number of houses sold and amount of housing credits taken is chosen as the first assumption to be tested. It should be noted here that, although the reader could trivially infer that the measures should be related, it requires a more advanced knowledge of economy and housing sector to guess the extent of this correlation.</p>
+<pre><code>## 
+##  Pearson&#39;s product-moment correlation
+## 
+## data:  amountSold$Amount and creditsTaken$Amount
+## t = 4.2749, df = 79, p-value = 5.301e-05
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  0.2375734 0.5954354
+## sample estimates:
+##       cor 
+## 0.4334386</code></pre>
+<p>Looking at the results, it can be stated that there is likely a strong correlation between number of houses sold and the amount of credits taken. The p-value is much small so it is well possible to reject the assumption of no relation. In a more detailed study, with the addition of the effect of inflation on the amount of housing credits taken a more intricate correlation analysis can be carried out.</p>
+<p>Secondly, it is also easy to assume that the amount of credits taken is affected by the level of interest rate applied. It should be suspected by many people that the correlation between these two measures might be negative. However, looking at visualizations of these measures this link between the two measures is somewhat missing in the period 2014-2018. If a correlation test is carried out,</p>
+<pre><code>## 
+##  Pearson&#39;s product-moment correlation
+## 
+## data:  creditsTaken$Amount and interestonCredit$Amount
+## t = 1.9281, df = 79, p-value = 0.05744
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.006664078  0.411304445
+## sample estimates:
+##       cor 
+## 0.2119938</code></pre>
+<p>The estimated correlation coefficient is, indeed very surprisingly, positive. Nevertheless, it should be taken into account that the p-value is not as small as desired, so this result may only be statistically significant in a 0,1 level of confidence. Regarding the positive correlation, in the long run the effect of inflation on the amounts of credit taken in TRY might have caused this measure to increase, although in a lower amount, while the interest rate imposed on the credit increases. Again, with the use of inflation on the amount of credits taken, more comprehensive, and hopefully less surprising, results should be obtained.</p>
+<p>Last but not at least, the indirect assumption of the existent relation between number of houses sold and the rate of interest applied on the housing credits can be tested. It is obvious that there is a third variable that is linked to both number of housing sold and interest rates on credit. Deriving from this and the previous assumptions, it might be claimed that the number of houses sold in a period can be negatively correlated to the interest rates imposed on the housing credits. Furthermore, with the exclusion of amount of housing credits taken the effect of inflation rate can no longer be a misleading factor here.</p>
+<pre><code>## 
+##  Pearson&#39;s product-moment correlation
+## 
+## data:  amountSold$Amount and interestonCredit$Amount
+## t = -1.4376, df = 79, p-value = 0.1545
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.36528282  0.06080068
+## sample estimates:
+##        cor 
+## -0.1596685</code></pre>
+<p>Looking at the results of the test, there seems to be a weakly negative correlation between to measures. However, the p-value is much higher than needed so the hypothesis of correlation cannot be readily accepted. Furthermore, it can be argued that buying preferences are usually subject to speculations and other subjective judgements. Due to that fact, the correlation between the two measures of interest may not be as strong and definite as expected.</p>
+<pre><code>## [1] &quot;Yearly Conducted Correlation Tests between Number of Houses Sold and Amount of Housing Credits&quot;</code></pre>
+<pre><code>##   Year       Cor         pval
+## 2 2014 0.8421281 0.0005887674
+## 3 2015 0.4278523 0.1652944419
+## 4 2016 0.7604396 0.0040886247
+## 5 2017 0.6688858 0.0173854077
+## 6 2018 0.1343797 0.6771340410
+## 7 2019 0.8329275 0.0007688635
+## 8 2020 0.6571664 0.0544472718</code></pre>
+<p>If we look at the yearly conducted correlation tests, it can be seen that for most of the years the amount of housing credits taken and the number of houses sold are strongly positively correlated. In few years, the correlation seems to be weak with high p-values. This indicates that, in some years there are no correlation. These results are surprising and might be the subject of a more advanced analysis making use of economy and related disciplines’ knowledge.</p>
+<pre><code>## [1] &quot;Yearly Conducted Correlation Tests between Amount of Housing Credits and the Interest Rate on Them&quot;</code></pre>
+<pre><code>##   Year         Cor         pval
+## 2 2014 -0.74705743 5.235262e-03
+## 3 2015  0.89091319 1.010348e-04
+## 4 2016 -0.96074582 6.871514e-07
+## 5 2017  0.89445543 8.619102e-05
+## 6 2018 -0.40920178 1.865404e-01
+## 7 2019 -0.64270386 2.419329e-02
+## 8 2020  0.05925474 8.796399e-01</code></pre>
+<p>Moving on with the yearly conducted correlation tests, it is obvious that in most of the years there is a statistically significant negative correlation between the amount of housing credits taken and the interest rates applied on them. In 2015 and 2017 however, there seems a high degree of positive correlation. While interpreting these results, it should be kept in mind that during this period the interest rates are rather stable so the decisions regarding the housing credit are probably not affected by the small changes in the level of interest rate. This situation is a clear example that the correlation studies conducted without in-depth visual analysis are sometimes inadequate.</p>
+<pre><code>## [1] &quot;Yearly Conducted Correlation Tests between Number of Houses Sold and the Interest Rate on Housing Credit&quot;</code></pre>
+<pre><code>##   Year        Cor         pval
+## 2 2014 -0.6182775 0.0321212027
+## 3 2015  0.2180671 0.4959527908
+## 4 2016 -0.6986802 0.0114786460
+## 5 2017  0.5882242 0.0442428316
+## 6 2018  0.4149346 0.1798383990
+## 7 2019 -0.8362605 0.0006993039
+## 8 2020 -0.5146855 0.1562534984</code></pre>
+<p>Lastly, the yearly correlations between number of houses sold and the interest rate imposed on the housing credit are examined. In most of the years, the results of these test do not reveal a statistically significant pattern. It is only in 2019 that there is a high extent of negative correlation between the two measures which was also pointed on in the visual analysis. In most of the other years, just like the amount of credits taken the number of houses sold is not affected by the change in interest rates.</p>
 </div>
 <div id="including-plots" class="section level2">
 <h2>Including Plots</h2>

@@ -168,8 +168,79 @@ ggplot(allCombined, aes(x=Date, y=Amount, group=year(Date))) +
 
   In year 2020 there is a completely different scenario. Interest rates imposed on housing credits are lower than ever. Nevertheless, there is still high volatility in number of houses sold accompanied by an ever large variability in amount of housing credits taken. This situation may lead to the conclusion that there are fluctuations in the housing market that are not potentially caused by the rate of interest. Still, these are several assumptions and it should be taken into account that because of their nature, boxplots are inadequate in terms of revealing any causation that have took place within a relatively short range of time. To be clearer, it is not understandable the relative movements and responses of measures with respect one another other occurring in a year. 
 
+
+  After these visualizations, running some correlation tests may yield more specific, although less detailed, explanations of the relations between the selected measures. As a first step, it would be sensible to apply correlation tests on the whole data points together. Keeping this in mind, in the upcoming three correlation test results combinations of the selected measures over the years 2014-2020 as one sample will be analyzed. Once these are calculated, it should be useful to inspect the correlations that are sampled using one or few several years and discussing any extreme or unforeseen result.
+
+  As it is generally known that a lot of people are funding the house they buy via housing credit, the correlation between number of houses sold and amount of housing credits taken is chosen as the first assumption to be tested. It should be noted here that, although the reader could trivially infer that the measures should be related, it requires a more advanced knowledge of economy and housing sector to guess the extent of this correlation. 
+
+
+```{r, include=TRUE, echo=FALSE}
+print(cor.test(amountSold$Amount, creditsTaken$Amount))
+```
  
+ Looking at the results, it can be stated that there is likely a strong correlation between number of houses sold and the amount of credits taken. The p-value is much small so it is well possible to reject the assumption of no relation. In a more detailed study, with the addition of the effect of inflation on the amount of housing credits taken a more intricate correlation analysis can be carried out.
+
+  Secondly, it is also easy to assume that the amount of credits taken is affected by the level of interest rate applied. It should be suspected by many people that the correlation between these two measures might be negative. However, looking at visualizations of these measures this link between the two measures is somewhat missing in the period 2014-2018. If a correlation test is carried out,
+  
+```{r, include=TRUE, echo=FALSE}
+print(cor.test(creditsTaken$Amount, interestonCredit$Amount))
+```
+
+  The estimated correlation coefficient is, indeed very surprisingly, positive. Nevertheless, it should be taken into account that the p-value is not as small as desired, so this result may only be statistically significant in a 0,1 level of confidence. Regarding the positive correlation, in the long run the effect of inflation on the amounts of credit taken in TRY might have caused this measure to increase, although in a lower amount, while the interest rate imposed on the credit increases. Again, with the use of inflation on the amount of credits taken, more comprehensive, and hopefully less surprising, results should be obtained.
+
+  Last but not at least, the indirect assumption of the existent relation between number of houses sold and the rate of interest applied on the housing credits can be tested. It is obvious that there is a third variable that is linked to both number of housing sold and interest rates on credit. Deriving from this and the previous assumptions, it might be claimed that the number of houses sold in a period can be negatively correlated to the interest rates imposed on the housing credits. Furthermore, with the exclusion of amount of housing credits taken the effect of inflation rate can no longer be a misleading factor here. 
+
+```{r, include=TRUE, echo=FALSE}
+print(cor.test(amountSold$Amount, interestonCredit$Amount))
+```
     
+  Looking at the results of the test, there seems to be a weakly negative correlation between to measures. However, the p-value is much higher than needed so the hypothesis of correlation cannot be readily accepted. Furthermore, it can be argued that buying preferences are usually subject to speculations and other subjective judgements. Due to that fact, the correlation between the two measures of interest may not be as strong and definite as expected.
+  
+```{r, include=FALSE, echo=FALSE}
+cor1 = data.frame(Year = NA, Cor = NA, pval = NA)
+
+for(i in 2014:2020){
+  x = cor.test(amountSold[year(Date) == i]$Amount, creditsTaken[year(Date) == i]$Amount)
+  cor1 = rbind(cor1, c(i, x$estimate, x$p.value))
+}
+
+cor2 = data.frame(Year = NA, Cor = NA, pval = NA)
+
+for(i in 2014:2020){
+  x = cor.test(interestonCredit[year(Date) == i]$Amount, creditsTaken[year(Date) == i]$Amount)
+  cor2 = rbind(cor2, c(i, x$estimate, x$p.value))
+}
+
+cor3 = data.frame(Year = NA, Cor = NA, pval = NA)
+
+for(i in 2014:2020){
+  x = cor.test(interestonCredit[year(Date) == i]$Amount, amountSold[year(Date) == i]$Amount)
+  cor3 = rbind(cor3, c(i, x$estimate, x$p.value))
+}
+```
+  
+```{r, include=TRUE, echo=FALSE}
+print("Yearly Conducted Correlation Tests between Number of Houses Sold and Amount of Housing Credits")
+cor1[-1,]
+```  
+
+  If we look at the yearly conducted correlation tests, it can be seen that for most of the years the amount of housing credits taken and the number of houses sold are strongly positively correlated. In few years, the correlation seems to be weak with high p-values. This indicates that, in some years there are no correlation. These results are surprising and might be the subject of a more advanced analysis making use of economy and related disciplines’ knowledge.
+  
+```{r, include=TRUE, echo=FALSE}
+print("Yearly Conducted Correlation Tests between Amount of Housing Credits and the Interest Rate on Them")
+cor2[-1,]
+```  
+
+  Moving on with the yearly conducted correlation tests, it is obvious that in most of the years there is a statistically significant negative correlation between the amount of housing credits taken and the interest rates applied on them. In 2015 and 2017 however, there seems a high degree of positive correlation. While interpreting these results, it should be kept in mind that during this period the interest rates are rather stable so the decisions regarding the housing credit are probably not affected by the small changes in the level of interest rate. This situation is a clear example that the correlation studies conducted without in-depth visual analysis are sometimes inadequate.
+  
+```{r, include=TRUE, echo=FALSE}
+print("Yearly Conducted Correlation Tests between Number of Houses Sold and the Interest Rate on Housing Credit")
+cor3[-1,]
+```  
+
+  Lastly, the yearly correlations between number of houses sold and the interest rate imposed on the housing credit are examined. In most of the years, the results of these test do not reveal a statistically significant pattern. It is only in 2019 that there is a high extent of negative correlation between the two measures which was also pointed on in the visual analysis. In most of the other years, just like the amount of credits taken the number of houses sold is not affected by the change in interest rates.
+  
+  
 ## Including Plots
 
 You can also embed plots, for example:
