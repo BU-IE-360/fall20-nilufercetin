@@ -470,7 +470,7 @@ amountSold = manipulator(read_xlsx(&quot;C:/Users/ŞAHİN ÇETİN/Desktop/KonutS
 ## sample estimates:
 ##       cor 
 ## 0.4334386</code></pre>
-<p>Looking at the results, it can be stated that there is likely a strong correlation between number of houses sold and the amount of credits taken. The p-value is much small so it is well possible to reject the assumption of no relation. In a more detailed study, with the addition of the effect of inflation on the amount of housing credits taken a more intricate correlation analysis can be carried out.</p>
+<p>Looking at the results, it can be stated that there is likely a strong correlation between number of houses sold and the amount of credits taken. The p-value is much small so it is well possible to reject the assumption of no relation on a statistically significant level. In a more detailed study, with the addition of the effect of inflation on the amount of housing credits taken a more intricate correlation analysis can be carried out.</p>
 <p>Secondly, it is also easy to assume that the amount of credits taken is affected by the level of interest rate applied. It should be suspected by many people that the correlation between these two measures might be negative. However, looking at visualizations of these measures this link between the two measures is somewhat missing in the period 2014-2018. If a correlation test is carried out,</p>
 <pre><code>## 
 ##  Pearson&#39;s product-moment correlation
@@ -496,7 +496,7 @@ amountSold = manipulator(read_xlsx(&quot;C:/Users/ŞAHİN ÇETİN/Desktop/KonutS
 ## sample estimates:
 ##        cor 
 ## -0.1596685</code></pre>
-<p>Looking at the results of the test, there seems to be a weakly negative correlation between to measures. However, the p-value is much higher than needed so the hypothesis of correlation cannot be readily accepted. Furthermore, it can be argued that buying preferences are usually subject to speculations and other subjective judgements. Due to that fact, the correlation between the two measures of interest may not be as strong and definite as expected.</p>
+<p>Looking at the results of the test, there seems to be a weakly negative correlation between to measures. However, the p-value is much higher than needed so the hypothesis of no correlation cannot be readily rejected. Furthermore, it can be argued that buying preferences are usually subject to speculations and other subjective judgements. Due to that fact, the correlation between the two measures of interest may not be as strong and definite as expected.</p>
 <pre><code>## [1] &quot;Yearly Conducted Correlation Tests between Number of Houses Sold and Amount of Housing Credits&quot;</code></pre>
 <pre><code>##   Year       Cor         pval
 ## 2 2014 0.8421281 0.0005887674
@@ -531,12 +531,22 @@ amountSold = manipulator(read_xlsx(&quot;C:/Users/ŞAHİN ÇETİN/Desktop/KonutS
 </div>
 <div id="key-findings" class="section level1">
 <h1>Key Findings</h1>
-<!-- ## Including Plots -->
-<!-- You can also embed plots, for example: -->
-<!-- ```{r pressure, include=FALSE, echo=FALSE} -->
-<!-- plot(pressure) -->
-<!-- ``` -->
-<!-- ##Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code ##that generated the plot. -->
+<p>In this study, the question of “Are there any correlation between number of houses sold, the amount of housing credits taken and the interest rate imposed on those credits?” is scrutinized. The data gathered was from Turkey collected on a monthly basis during January 2014 till October 2020. Moreover, detailed visualizations accompanied by basic correlation tests and scatter plots were used as the foundations to the analysis. Below can be listed as some key conclusions derived.</p>
+<ol style="list-style-type: decimal">
+<li><p>In the long run, if the interest rates can be considered as stable, there is a high extent of positive correlation between the number of houses sold and the amount of housing loans taken. Furthermore, an interval of %10-%15 can be considered as a safe-zone for the interest rates applied. The movement of interest rates in this interval does not alter the housing and funding preferences of the citizens of Turkey. When the interest rates exceed the previously defined “safe-zone”, amount of housing credits taken is faster at changing the behavior compared to the number of houses sold. Nevertheless, in the short run the number of houses sold is more affected from the change in interest rates compared to the amount of credits taken.</p></li>
+<li><p>Moreover, the high interest rates do not result in a steady decline in the level of house shopping. Instead, although the number of houses sold is almost always lower than the levels that occur in normal situations, there are a lot of ups and downs when the interest rate is high. This suggests a high amount of volatility.</p></li>
+<li><p>After the periods of high interest rates applied on housing credit, people tend to buy more houses that are previously seen as normal. This situation probably results from the postponed decisions. However, it might be interesting to test this assumption with another data where there are high interest rates persistent.</p></li>
+<li><p>The effects of interest rates on the housing sector are known by many authorities and probably used as an incentive to trigger a boom in housing sector. The data recorded in the summer of 2020 can be given as a supporting argument to this situation. However, only by finding more evidence this assumption can be tested.</p></li>
+<li><p>It might not be a good idea for a future study to neglect the effect of inflation on the amount of credits taken. Since the inflation is persistent in the Turkish economy, the amount of housing credits taken seem to be almost always increasing. Due to this fact, some of the correlation analyses might be misleading or perform as inefficient. If the effect of inflation cannot be taken into account, it might be a good idea to change the measure as the number of people applying for a housing loan.</p></li>
+</ol>
+<p>Regarding all these analyses and conclusions, it is important to state that this report lacks the necessary amount of economical and sectoral knowledge. Most of the insights claimed are merely assumptions that are derived by pure visualizations along with basic correlation analysis. Incorporating more advanced information of the related fields may yield more intricate and statistically significant findings.</p>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+</div>
+<div id="appendices" class="section level1">
+<h1>Appendices</h1>
+<p><a href="files/HMW2.Rmd">Here</a> the RMD File including the code chunks can be found.</p>
 </div>
 
 
