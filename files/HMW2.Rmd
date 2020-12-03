@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "A Study on the Link between Several Measures from the Turkish Housing Market"
 author: "Nilüfer Çetin  - IE360 - Fall 2020"
 date: "30 11 2020"
 output: html_document
@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## A Study on the Link between Several Measures from the Turkish Housing Market
+# Introduction
 
   Over the last few years in Turkey, it is frequently mentioned that the housing and construction has become an important sector that is used to support the fragile economy. There are a lot of undergoing mass housing projects that are aimed to target various potential buyers. Moreover, people nowadays usually do not own a house just for accommodation; investment, seasonal tourism and renting has become popular reasons for people to buy residences. Although there is an ever increasing number of housing projects and potential customers, it is not sensible to think that all of these customers have the enough amount of money to fund this transaction. In fact, taking out a loan from a bank is a widely used way to buy any kind of housing. This loan is usually referred to as “housing credit”. 
 
@@ -21,6 +21,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
   The data is taken from Electronic Data Delivery System on [EVDS](https://evds2.tcmb.gov.tr/). It is assumed that a period from January 2014 till September 2020 can be long enough to offer a solid analysis. Furthermore, these consecutive years are selected so that it should be easier to explain outlier values or unexpected phenomena since they will be up-to-date from both the researcher’s and reader’s perspective.  The data taken are gathered in a monthly fashion. Secondly, there are three different measures of datasets. In one of the datasets, the total number of houses sold all over Turkey in a specific month is stated. In the other dataset, the total amount of housing credits in million TLs in a specific month are listed. These are the credits that are taken from Deposit Banks. Though there are other types of banks lending housing credit they do this in relatively very small amounts so it can easily be assumed that addition of these amounts might not make any difference in the analysis. The last dataset covers the interest rate on housing credits in Turkey month by month. 
 
+
+# Analysis
+
+## Manipulation of Data
+
   Before the analysis, it is necessary to manipulate the data in a more understandable and easy to work format. Since the data are taken from the same web page, they are more or less in very similar forms. Although there are a few extra manipulations, most of the data is manipulated using this function, for more detailed information the reader can take a look at the rmd file provided in the appendices.
 
 
@@ -30,6 +35,7 @@ library(lubridate)
 library(ggplot2)
 library(readxl)
 library(dplyr)
+library(GGally)
 ```
 
 ```{r, include=TRUE, warning=FALSE}
@@ -65,6 +71,8 @@ head(amountSold, 10)
 ```{r, include=TRUE, echo=FALSE}
 str(allCombined, 10)
 ```
+  
+## Visual Analysis of Data
   
   After those manipulations, it would be useful to visualize the measures in histogram to check for any assumption related to distribution or other statistics. To serve this purpose, year by year histograms of measures constituting of 12 different reported values is chosen as an appropriate format. 
   
@@ -168,6 +176,28 @@ ggplot(allCombined, aes(x=Date, y=Amount, group=year(Date))) +
 
   In year 2020 there is a completely different scenario. Interest rates imposed on housing credits are lower than ever. Nevertheless, there is still high volatility in number of houses sold accompanied by an ever large variability in amount of housing credits taken. This situation may lead to the conclusion that there are fluctuations in the housing market that are not potentially caused by the rate of interest. Still, these are several assumptions and it should be taken into account that because of their nature, boxplots are inadequate in terms of revealing any causation that have took place within a relatively short range of time. To be clearer, it is not understandable the relative movements and responses of measures with respect one another other occurring in a year. 
 
+## Scatter Plots and Normality Assumptions
+
+  Before moving on with correlation tests that will yield numeric and statistical data, one last visualization should be useful. In fact, this visualization will be an introduction to the correlation tests since it will be consisting of combined pairs of measures, their scatter plots and correlation coefficients.
+  
+```{r, include=FALSE, echo=FALSE}
+pairs = data.frame(rand=NA)
+pairs = cbind(pairs, Date = amountSold$Date, Sold = amountSold$Amount, Credits = creditsTaken$Amount, InterestRate = interestonCredit$Amount)
+pairs = pairs[,-1]
+```
+  
+
+```{r, include=TRUE, echo=FALSE}
+ggpairs(pairs[,-1]) + theme_minimal() 
+```
+  
+  When the results are examined, at the diagonals it can be seen that the number of houses sold and the interest rate on the housing credit seems to be coming from a somewhat normal distribution over time, however, with several extremely high values occuring. Though the amount of credits taken cannot be fitted into a normal distribution as the aim of this study is analyzing the relations, this fact will be omitted. With the scatter plot and correlation results of number of houses sold to amount of credits taken it can be seen that there is a linear relationship between the two measures.
+  
+  If the scatter plot of number of houses sold to the interest applied on the housing credit is inspected, it can be understood that there is not much correlation between the two measures. However, at the low rates of interest the observations of number of houses sold is much more scattered. This situation have arised probably because there was a relatively short range of time during which the interest rates were high. If this trend would have continued instead, people probably would not be able to postpone buying a house so there would again occur a degree of variability eventually. The comments on the correlation coefficient will be provided in the upcoming sections.
+  
+  Lastly, the scatter plot of housing credits taken versus interest rates applied on the credit shows a very unique pattern. There seems to be certain observations that are occuring only together. Nevertheless, the analysis of such a behavior would require more advanced knowledge of statistics. Furthermore, it can mentioned that just like the previously examined scatter plot, with the high interest rates, the variance of the amount of credit taken certainly reduces. This could be due to the previously mentioned fact. 
+
+## Correlation Analyses
 
   After these visualizations, running some correlation tests may yield more specific, although less detailed, explanations of the relations between the selected measures. As a first step, it would be sensible to apply correlation tests on the whole data points together. Keeping this in mind, in the upcoming three correlation test results combinations of the selected measures over the years 2014-2020 as one sample will be analyzed. Once these are calculated, it should be useful to inspect the correlations that are sampled using one or few several years and discussing any extreme or unforeseen result.
 
@@ -240,13 +270,16 @@ cor3[-1,]
 
   Lastly, the yearly correlations between number of houses sold and the interest rate imposed on the housing credit are examined. In most of the years, the results of these test do not reveal a statistically significant pattern. It is only in 2019 that there is a high extent of negative correlation between the two measures which was also pointed on in the visual analysis. In most of the other years, just like the amount of credits taken the number of houses sold is not affected by the change in interest rates.
   
-  
-## Including Plots
 
-You can also embed plots, for example:
+#   Key Findings
 
-```{r pressure, include=FALSE, echo=FALSE}
-plot(pressure)
-```
 
-##Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code ##that generated the plot.
+<!-- ## Including Plots -->
+
+<!-- You can also embed plots, for example: -->
+
+<!-- ```{r pressure, include=FALSE, echo=FALSE} -->
+<!-- plot(pressure) -->
+<!-- ``` -->
+
+<!-- ##Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code ##that generated the plot. -->
