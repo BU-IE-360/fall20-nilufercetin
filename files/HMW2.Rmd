@@ -132,11 +132,13 @@ ggplot(allCombined%>%filter(Type == "Credit"), aes(x=Amount)) +
 ggplot(allCombined[Type=="Interest"], aes(x = Date, y = Amount*2600, group = 1)) +
   geom_bar(fill = "pink", stat="identity") +
   geom_text(aes(label = sprintf("%.1f", Amount), y= Amount*2600), angle = 90, vjust = 0.5, hjust = 0, size = 2.5)+
+  labs(x = "Date1") +
   geom_line(data = allCombined[Type != "Interest"], aes(x=Date, y=Amount, color= Type, group=Type), 
             size = 1) + 
   labs(title = "Several Measures of Housing in Turkey between 2014-2020 Reported Monthly", 
                              x = "Date",
-                             y = "Amount") +
+                             y = "Amount",
+                            color = "Interest rate shown in bars") +
   scale_x_date(date_breaks = "5 months") +
   ylim(0, 260000) +
   theme_minimal() +
@@ -159,7 +161,7 @@ ggplot(allCombined[Type=="Interest"], aes(x = Date, y = Amount*2600, group = 1))
 ggplot(allCombined, aes(x=Date, y=Amount, group=year(Date))) +
   geom_boxplot(aes(fill= factor(year(Date)))) +
   scale_fill_brewer(palette = "YlOrRd", name = "Years") +
-  labs(title = "Boxplots of Several Measures of Housing in Turkey between 2014-2020 Reported Monthly", 
+  labs(title = "Boxplots of Several Housing Measures in Turkey between 2014-2020 Monthly", 
        x = "Year Dates",
        y = "Amounts") +
   scale_x_date(date_breaks = "1 year") +
@@ -188,7 +190,7 @@ pairs = pairs[,-1]
   
 
 ```{r, include=TRUE, echo=FALSE}
-ggpairs(pairs[,-1]) + theme_minimal() 
+ggpairs(pairs[,-1]) + theme_minimal() + labs(title ="Scatter Plots and Correlations Matrix of Housing Measures 2014-2020")
 ```
   
   When the results are examined, at the diagonals it can be seen that the number of houses sold and the interest rate on the housing credit seems to be coming from a somewhat normal distribution over time, however, with several extremely high values occuring. Though the amount of credits taken cannot be fitted into a normal distribution as the aim of this study is analyzing the relations, this fact will be omitted. With the scatter plot and correlation results of number of houses sold to amount of credits taken it can be seen that there is a linear relationship between the two measures.
@@ -205,6 +207,7 @@ ggpairs(pairs[,-1]) + theme_minimal()
 
 
 ```{r, include=TRUE, echo=FALSE}
+print("Correlation Test between Number of Houses Sold and Amount of Housing Credits over 2014-2020")
 print(cor.test(amountSold$Amount, creditsTaken$Amount))
 ```
  
@@ -213,6 +216,7 @@ print(cor.test(amountSold$Amount, creditsTaken$Amount))
   Secondly, it is also easy to assume that the amount of credits taken is affected by the level of interest rate applied. It should be suspected by many people that the correlation between these two measures might be negative. However, looking at visualizations of these measures this link between the two measures is somewhat missing in the period 2014-2018. If a correlation test is carried out,
   
 ```{r, include=TRUE, echo=FALSE}
+print("Correlation Test between Amount of Housing Credits and the Interest Rate on Them over 2014-2020")
 print(cor.test(creditsTaken$Amount, interestonCredit$Amount))
 ```
 
@@ -221,6 +225,7 @@ print(cor.test(creditsTaken$Amount, interestonCredit$Amount))
   Last but not at least, the indirect assumption of the existent relation between number of houses sold and the rate of interest applied on the housing credits can be tested. It is obvious that there is a third variable that is linked to both number of housing sold and interest rates on credit. Deriving from this and the previous assumptions, it might be claimed that the number of houses sold in a period can be negatively correlated to the interest rates imposed on the housing credits. Furthermore, with the exclusion of amount of housing credits taken the effect of inflation rate can no longer be a misleading factor here. 
 
 ```{r, include=TRUE, echo=FALSE}
+print("Correlation Test between Number of Houses Sold and the Interest Rate on Housing Credit over 2014-2020")
 print(cor.test(amountSold$Amount, interestonCredit$Amount))
 ```
     
@@ -297,5 +302,5 @@ Regarding all these analyses and conclusions, it is important to state that this
   •   [Other Questions](https://stackoverflow.com/)
 
 #   Appendices
-[Here](files/HMW2.Rmd) the RMD File including the code chunks can be found.
+[Here](https://bu-ie-360.github.io/fall20-nilufercetin/files/HMW2.Rmd) the RMD File including the code chunks can be found.
 
