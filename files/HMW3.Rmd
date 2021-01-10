@@ -117,13 +117,15 @@ After that point, adding some economic indicator variables can be useful. It can
 
 It seems reasonable to think that the half year average export rate might be better at revealing the performance of firms and economic situation in Turkey. Therefore, a scatter plot in which number of liquidated firms is shown versus six month average export rate is drawn.
 
-```{r, include=TRUE, echo=FALSE}
+```{r, include=TRUE, echo=FALSE, warning=FALSE}
 output = as.data.table(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS4.xlsx"))
 liquidated[,out:=0]
 liquidated[1:82,out := as.double(unlist(output[1:82,2]))]
 liquidated[83, out:=188]
 liquidated[,six_month_avg_out := rollmean(out, k=6, fill=NA, align="right")]
 liq2017 = liquidated%>%filter(Year>=4)
+liq2017[,out2:=out]
+liq2017[Month==1|Month==12, out2:=0]
 
 plot(liq2017$six_month_avg_out, liq2017$Firms, xlab="Six Month Average Export", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Six Month Average Export (Indexed to 2010)")
 ```
@@ -148,14 +150,13 @@ It can be commented that the positive correlation is obvious as the correlation 
 Although the exact relation between two measures is still ambiguous, it might be a good idea to add the monthly indexed export to the previous model. Before the new model is built, it should be noted that the export rate does not show any correlation to the January and December observations. Therefore, to capture the actual effect of this measure, the indexed exports of these months are fixed to 0. This means that, once the export rate is added to the model it can only contribute to the prediction of monthly values other than January and December. With necessary manipulations, the model is obtained as,
 
 ```{r, include=TRUE, echo=FALSE}
-liq2017[Month==1 | Month==12, out:=0]
-summary(lm(Firms ~ as.factor(Month) + out, liq2017))
+summary(lm(Firms ~ as.factor(Month) + out2, liq2017))
 ```
 
 It can be inferred from the summary, that the export is a statistically significant variable. Moreover, with decreased residual standard error and increased adjusted R squared value, it can be stated that the model have become more useful. If the Breusch-Godfrey test for serial correlation is applied,
 
 ```{r, include=TRUE, echo=FALSE}
-checkresiduals(lm(Firms ~ as.factor(Month) + out, liq2017))
+checkresiduals(lm(Firms ~ as.factor(Month) + out2, liq2017))
 ```
 
 Although the p-value is not problematic, there seems weak autocorrelations between residuals at small lags. Moreover, consecutive residuals seem to be positively correlated after the first year’s observations. Hence, it might be a good idea to add more regressors to the model.
@@ -167,7 +168,7 @@ Interest rates applied on commercial loans between years 2014 and 2020 is extrac
 ```{r, include=TRUE, echo=FALSE}
 commerce = read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS2.xlsx")
 liquidated[,Loan := as.double(unlist(commerce[1:83,2]))]
-liq2017 = liquidated%>%filter(Year>=4)
+liq2017$Loan=liquidated[37:83]$Loan
 plot(liq2017$Loan, liq2017$Firms, xlab="Monthy Applied Interest Rates", ylab = "Monthly Liquidated Firms",main = "Monthly Liquidated Firms vs. Monthly Interest Rate of Commercial Loans")
 ```
 
@@ -175,13 +176,13 @@ It can be observed that, the interest rate applied makes difference only when th
 
 ```{r, include=TRUE, echo=FALSE}
 liq2017[Loan<22, Loan:=0]
-summary(lm(Firms ~ as.factor(Month) + out + Loan, liq2017))
+summary(lm(Firms ~ as.factor(Month) + out2 + Loan, liq2017))
 ```
 
 It can be seen that the indicator variable is statistically significant. Residual standard error value decreased as compared to the previous model while a better adjusted R squared value is yielded. If the Breusch-Godfrey test for serial correlation is applied,
 
 ```{r, include=TRUE, echo=FALSE}
-checkresiduals(lm(Firms ~ as.factor(Month) + out + Loan, liq2017))
+checkresiduals(lm(Firms ~ as.factor(Month) + out2 + Loan, liq2017))
 ```
 
 A better fit for a normal distribution along with seemingly stable variance in residual errors is obtained. Although the p-value have become smaller, there does not seem a statistically significant autocorrelation between residuals.
@@ -195,8 +196,8 @@ exrate = as.data.table(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS3.xlsx"))
 liquidated[,USD:=0]
 liquidated[1:83,USD := as.double(unlist(exrate[1:83,2]))]
 liquidated[,avg_USD := rollmean(USD, k=4, fill=NA, align="right")]
-liq2017 = liquidated%>%filter(Year>=4)
-
+liq2017$avg_USD = liquidated[37:83]$avg_USD
+liq2017$USD = liquidated[37:83]$USD
 plot(liq2017$avg_USD, liq2017$Firms, xlab="Four Month Average Exchange Rate", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Four Month Average Exchange Rate(USD/TRY)")
 ```
 
@@ -212,7 +213,7 @@ A similar situation occurs in this case too. Instead of trying to force a model,
 exrate2 = as.data.table(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS6.xlsx"))
 liquidated[,RUS:=0]
 liquidated[1:83,RUS := as.double(unlist(exrate2[1:83,2]))]
-liq2017 = liquidated%>%filter(Year>=4)
+liq2017$RUS = liquidated[37:83]$RUS
 
 plot(liq2017$RUS, liq2017$Firms, xlab="RUS/TRY Exchange Rate", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Exchange Rate(RUS/TRY)")
 ```
@@ -222,7 +223,7 @@ It can be examined that, for the rates above 0.07 there might be a linear relati
 ```{r, include=TRUE, echo=FALSE}
 liq2017[,RUS2:=RUS]
 liq2017[RUS<0.07, RUS2:=0]
-summary(lm(Firms ~ as.factor(Month) + out + Loan + RUS2, liq2017))
+summary(lm(Firms ~ as.factor(Month) + out2 + Loan + RUS2, liq2017))
 ```
 
 It can be argued that the added variable have become somehow weak to explain a further variability in the model, as can be interpreted by the specific p-value and difference in residual standard error. This might be the case because the variable might already be correlated to another variable in the model thus falling short of bringing any additional effect. It is actually trivial knowledge that, the interest rates are highly correlated to the exchange rates. Due to this behavior, it might be useful to choose one of exchange rate or interest rate as an indicator variable.
@@ -231,22 +232,22 @@ Before the decision, a variable indicating the year can be added to the model. T
 
 
 ```{r, include=TRUE, echo=FALSE}
-summary(lm(Firms ~ as.factor(Month) + as.factor(Year) + out + Loan, liq2017))
+summary(lm(Firms ~ as.factor(Month) + as.factor(Year) + out2 + Loan, liq2017))
 ```
 
 This model provides improved adjusted R squared and residual standard error values. However with the addition of years, the variable representing high interest rates lost its significance. That is probably dues to the fact that high interest rates occurred consecutively in one of the years and did not occur in any of the other years. Once the year is added as the regressor, the variable might gave lost its meaning. However, by examining the dataset it can be observed that the large exchange rate values are not limited to only a year. Thus, a model excluding interest rate and including Russian Ruble/TRY Exchange Rate might yield better performance,
 
 ```{r, include=TRUE, echo=FALSE}
-summary(lm(Firms ~ as.factor(Month) + as.factor(Year) + out + RUS2, liq2017))
+summary(lm(Firms ~ as.factor(Month) + as.factor(Year) + out2 + RUS2, liq2017))
 ```
 
 It can be stated that most of the regressors of the model are statistically significant. Moreover, the far-best residual error and adjusted R squared values are found. Although there are some years where the coefficient is not significant, the variable can be left as that since the effects in 2017 and 2020 seem to be captured. To serve this purpose, the Breusch-Godfrey test for serial correlation will be used,
 
 ```{r, include=TRUE, echo=FALSE}
-checkresiduals(lm(Firms ~ as.factor(Month) + as.factor(Year) + out + RUS2, liq2017))
+checkresiduals(lm(Firms ~ as.factor(Month) + as.factor(Year) + out2 + RUS2, liq2017))
 ```
 
-By the findings, there seems to be no serial correlation that is statistically significant. Moreover, the residuals can be easily fitted to a normal distribution. The volatility of residuals in Year 2020 is reduced. Nonetheless, in the last few months of 2017 the errors have become volatile. As a good model with minimal error and acceptable residual statistics has been found. The discussion will be continued by commenting on findings that will be obtained by applying the model on the dataset.
+By the findings, there seems to be no serial correlation that is statistically significant. However, the residuals can being normally distributed assumption might not be statistically significant at some levels. Still, the volatility of residuals in Year 2020 is partially reduced, it should be kept in mind that the value of export for November 2020 was a mere forecast, so it is no surprise that there is high error in that period. Nonetheless, in the last few months of 2017 the errors have become volatile. As a good model with minimal error and acceptable residual statistics has been found. The discussion will be continued by commenting on findings that will be obtained by applying the model on the dataset.
 
 
 ## Residual Analysis
@@ -254,7 +255,7 @@ By the findings, there seems to be no serial correlation that is statistically s
 Before the fitted versus actual observations are plotted, it would be sensible to plot errors against the observed regressor values. 
 
 ```{r, include=TRUE, echo=FALSE}
-model = lm(Firms ~ as.factor(Month) + as.factor(Year) + out + RUS2, liq2017)
+model = lm(Firms ~ as.factor(Month) + as.factor(Year) + out2 + RUS2, liq2017)
 liq2017[,fit:=fitted(model)]
 liq2017[,residual:=residuals(model)]
 
@@ -278,6 +279,7 @@ It can be inferred from the plot that the residuals do not show any correlation 
 ```{r, include=TRUE, echo=FALSE}
 plot(liq2017$residual, liq2017$Month, xlab="Residuals", ylab = "Months", main = "Months vs. Residuals of Proposed Model")
 ```
+
 When the plot is examined, it can be observed that the residuals are in general scattered for each month. In most of the months the model has performed good and in some of the months there are unforeseen outlier residuals.
 
 It should be noted that since there are few years in the data, the residuals versus year plot is omitted. 
@@ -302,11 +304,23 @@ The plot reveals that, the model has a good fit. For a short period in late 2017
 
 The deviation in 2020's values were discussed at the beginning of the study and were rather unforeseen. It should be kept in mind that with wider knowledge of economic tools and market dynamics in Turkey, the model might have been better adjusted to predict 2020 observations.
 
+## Prediction of December 2020 Value
+
+```{r, include=TRUE, echo=FALSE}
+liq2017 = rbind(liq2017, list(as.yearmon(paste(2020, 12, sep='-')),0,12,7,0,0,0,0,0,0,0,0.1,NA,0))
+liq2017[is.na(fit)==T,fit:=predict(model, liq2017[is.na(fit)==T])]
+print(liq2017[48]$fit)
+```
+
+Since the month is December, the only exogenous variable is the RUS/TRY exchange rate. Although the exact rate is not given in EVDS, it might be practical to assume that the average rate is 0.1. When the forecast is done with these parameters, a prediction of approximately 2333 firms will be liquidated in December 2020 is yielded.
+
 ## Conclusion
 
 In this study, a statistically acceptable model that is able to predict monthly liquated number of firms in Turkey with minimal residual error was obtained by trial and error.
 
 It can be stated that the model might have been improved by the use of more regressors and autoregressive variables. However, as discussed previously, the aim was to observe and analyze the relation between some economic indicators to the target variable and the seasonality or cyclic behavior within the variable itself. Therefore, as this kind of analysis would require much more advanced knowledge of economic tools, the model can be regarded as suitable and adequate. Furthermore, the use of autoregressive variables is ignored to better illustrate the efficiency and ease in the use of economic indicators.
+
+It should also be noted that the missing export amount in November 2020 has worsened the model, in another runs where November 2020 is excluded from the model builded, a better fit with less residual error, approximately 105, was obtained. However, to not further complicate the dataset, the slight misleading caused by the missing observation of this period is preferred. 
 
 ##   References
 [EVDS Web Site](https://evds2.tcmb.gov.tr/)
