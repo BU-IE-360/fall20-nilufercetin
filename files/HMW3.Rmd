@@ -1,0 +1,319 @@
+---
+title: Forecasting Number of Monthly Liquidated Firms in Turkey using Linear Regression
+  and basic Economic Indicators
+author: "Nilüfer Çetin  - IE360 - Fall 2020"
+date: "10 01 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Liquidation in economic terms, simply means that a company is closing up and ending business. In this sense, the word refers to the process in which assets of the company is liquidated, that is given to the shareholders and those who claim etc. In every month, the companies that are not able to make their payments and obligations that are due face liquidation. 
+
+The aim of this study is to derive an adequate model to forecast the number of monthly liquidated firms in Turkey from January 2017 to December 2020, data gathered from [EVDS](https://evds2.tcmb.gov.tr/). To serve this purpose, the data and its relation to several economic variables in the same period will be analyzed. By the use of simple correlation test findings, appropriate regression models will be generated. It should be noted that the models will be developed by trial and error and at each step the shortcomings and possible improvements to the model will be discussed. Once an alternative model is generated, forecast of December 2020 will be made and the error in this prediction will be calculated along with other months’ errors. 
+
+It should be kept in mind that this study makes use of tools and concepts from time series and statistics domain such as regression, residual errors and correlation statistics. The reader might probably need an understanding of these related topics to better grasp the models and analysis being discussed.
+
+## Data Analysis
+
+```{r cars, include=FALSE}
+library(ggplot2)
+library(zoo)
+library(data.table)
+library(readxl)
+library(lubridate)
+library(dplyr)
+library(forecast)
+
+liquidated = read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS.xlsx")
+liquidated = as.data.table(liquidated[1:83, 1:2])
+colnames(liquidated) = c("Date", "Firms")
+liquidated[,Date := as.yearmon(Date)]
+liquidated[,Firms := as.numeric(unlist(liquidated$Firms))]
+liquidated[, Month := month(Date)]
+liquidated[, Year := year(Date)-2013]
+
+liq2017 = liquidated%>%filter(Year>=4)
+```
+
+Once the data of monthly liquidated firms between years 2014 and 2020 is obtained from the source, the data after year 2016 is filtered. Before developing any model, it should be useful to analyze the data. Therefore, the histogram of monthly liquidated firms is drawn. 
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(liq2017, aes(x=Firms)) +
+  geom_histogram(aes(y=..density..), colour="blue", fill="lightskyblue", bins = 8)+ 
+  geom_density(alpha=.2, fill="purple", colour="brown") +
+  labs(title = "Histograms of Number of Liquidated Firms in Turkey over 2017-2020 observed Monthly", 
+       x = "Number of Firms Liquidated in a Month",
+       y = "Density") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+The histogram reveals that the monthly number of liquidated firms seem to be distributed similar to a normal distribution with high outliers between 2000 and 2500. It can be inferred that once these outliers are eliminated, the data can be fitted to an approximately normal distribution more easily.
+To check for these outliers, we can filter the observations with which the number of liquidated firms are greater than 2000,
+
+```{r, include=TRUE, echo=FALSE}
+liq2017%>%filter(Firms>2000)
+
+```
+
+It can be seen that these outliers have occurred either in December or in January. It is a trivial knowledge that all firms are bound to create a balance sheet and report their payments, earnings and other financial statistics to the authorities at the end of the year. Moreover in Turkey, firms that have negative end-of-year balances in three consecutive years are obliged to end their business. As a result of this managerial processes, there are obvious increases in number of liquidated firms at the end and beginning of each year. The situation of the outliers and related decisions will be further discussed in model creation.  
+
+After the outlier analysis, the monthly number of liquidated firms can be plotted versus time.
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(liq2017, aes(x = Date, y = Firms)) +
+  geom_line(size = 1, color="purple") + 
+  labs(title = "Number of Liquidated Firms in Turkey between 2017-2020 Reported Monthly", 
+                             x = "Date",
+                             y = "Amount Liquidated") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+It can be understood from the plot that the number of liquidated firms show a monthly seasonality that is especially stronger in last and first few months of the year. The periodic jumps that are discussed as outliers before can also be seen from the plot. Moreover, in the year 2020 the periodicity seem to be weaker compared to the previous years. This situation have arisen probably due to the economic aid policies for firms that are facing sharp decreases in sales because of the pandemic and ongoing lockdown. While producing a model, it would be highly useful to add an indicator variable showing undergoing financial aids. However, the values in summer seem to be fluctuating probably because of delayed liquidation of some firms or other firms facing reductions in demand. Nevertheless, the analysis of fluctuations require more detailed and advanced use of economic tools that are well beyond the scope of this study. Consequently, there will not be much additional effort to fit the summer and autumn observations of 2020 while building a model.
+	
+To support the seasonality hypothesis, an autocorrelation function plot of the monthly liquidated firms can be shown. 
+
+```{r, include=TRUE, echo=FALSE}
+plot(acf(liq2017$Firms, lag.max = 25, plot=FALSE), main = "Autocorrelation of Monthly Liquidated Firms") 
+
+```
+
+It is obvious from the plot that there is a strong positive correlation at lag 12. This phenomena reflects the underlying seasonality. Before visualization of the plot, it was known that the outlier values occurring at January and December are repeated at each year. Therefore, it might be useful to check if there is any serial correlation excluding January and December observations. To serve this purpose, a new data frame is created with observations of 10 months in 4 years. If the autocorrelation function plot of this data frame is drawn,
+
+```{r, include=TRUE, echo=FALSE}
+liq2017inside = liq2017%>%filter(Month!=1 & Month!=12)
+plot(acf(liq2017inside$Firms, lag.max = 25, plot=FALSE), main = "Autocorrelation of Monthly Liquidated Firms Outliers Excluded") 
+
+```
+
+It can be seen that there is a somewhat strong positive correlation coefficient at lag 10, supporting that there is yearly seasonality in the target measure. Moreover, the plot shows that number of monthly liquidated firms are strongly negatively correlated at lag 5. However, there is an ambiguity in this dataset since January and December are eliminated some of the observations have 5 months between them whereas some of them have actually 7 months, including January and December. As a consequence, it should be a relatively hard and complicated task to add an indicator of “Liquidated Firms at Lag5” to the upcoming models. 
+ 
+## Forecasting Models 
+
+By the help of the findings of serial correlation analysis, it is safe to start building a model by adding only factored months as variables. 
+
+```{r, include=TRUE, echo=FALSE}
+summary(lm(Firms ~ as.factor(Month), liq2017))
+```
+
+It should be kept in mind that this model does not actually make use of any additional functionality that the linear regression introduces and a similar model could have been obtained by pure time series approaches. Nevertheless, the model is adequate as the adjusted R squared value is high and almost all of the factored months are statistically significant. The reason why December does not seem to be significant is that, December observations are quite similar to those of January and the effect of January is already existent in the intercept. Once the Breusch-Godfrey test for serial correlation is executed on the model,
+
+```{r, include=TRUE, echo=FALSE}
+checkresiduals(lm(Firms ~ as.factor(Month), liq2017))
+```
+
+It can be seen that the variance of residuals is volatile in the years 2017 and 2020. Furthermore, residuals of the model cannot be fitted into a normal distribution. Though, it can be claimed by the plot and p-value that there are not any statistically significant autocorrelations within the residuals.
+
+After that point, adding some economic indicator variables can be useful. It can be stated that many of the firms in Turkey conduct their business internationally or at least have one or few international customers. Therefore, the frequency or number of sales to customers that are abroad might be an indicator of company’s performance in middle or short run. Due to this claim, monthly export data obtained between years 2014 and 2020 is obtained from the EVDS source and after necessary manipulations, two columns are added to the data frame. One of the columns show an average of half year monthly exports that are indexed to 2010 and the other column shows the monthly exports, again indexed to 2010. It should be noted that the observation of indexed export on November 2020 is not available at EVDS yet. So, by examining its relation to the previous month and previous year, a value of 188 is manually given to this observation.
+
+It seems reasonable to think that the half year average export rate might be better at revealing the performance of firms and economic situation in Turkey. Therefore, a scatter plot in which number of liquidated firms is shown versus six month average export rate is drawn.
+
+```{r, include=TRUE, echo=FALSE}
+output = as.data.table(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS4.xlsx"))
+liquidated[,out:=0]
+liquidated[1:82,out := as.double(unlist(output[1:82,2]))]
+liquidated[83, out:=188]
+liquidated[,six_month_avg_out := rollmean(out, k=6, fill=NA, align="right")]
+liq2017 = liquidated%>%filter(Year>=4)
+
+plot(liq2017$six_month_avg_out, liq2017$Firms, xlab="Six Month Average Export", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Six Month Average Export (Indexed to 2010)")
+```
+
+From this scatter plot, it can be understood that the outliers do not show any clear pattern with the indicator. Moreover, this will probably be the case when dealing with other possible indicator variables too. Nonetheless, even if the outliers are excluded from the dataset there seems to be no clear pattern between two measures. Moving on with the scatterplot of monthly liquidated firms versus monthly indexed export,
+
+```{r, include=TRUE, echo=FALSE}
+plot(liq2017$out, liq2017$Firms, xlab="Monthly Export", ylab = "Monthly Liquidated Firms",main = "Monthly Liquidated Firms vs. Monthly Export (Indexed to 2010)")
+```
+
+
+There seems a somehow positive correlation between the two measures. Similar to the previous case, the existence of the outlier observations on the plot makes it hard to draw clear conclusions. If the same scatterplot is obtained without the January and December observations,
+
+```{r, include=TRUE, echo=FALSE}
+liq2017inside = liq2017%>%filter(Month!=1&Month!=12)
+plot(liq2017inside$out, liq2017inside$Firms, xlab="Monthly Export", ylab = "Monthly Liquidated Firms",main = "Monthly Liquidated Firms vs. Monthly Export (Indexed to 2010) Excluding Outliers")
+cor(liq2017inside$out, liq2017inside$Firms)
+```
+
+It can be commented that the positive correlation is obvious as the correlation coefficient is about 0.45. This finding is rather surprising since it would be logical to think that the amount of export is a good measure of company’s performance and that the companies that sell more are less risky to be liquidated. However, regarding the findings the situation is opposite. This may be the case because both measures can be correlated with another third variable, such as exchange rates. One example might be that, in an economy with the value of the money is decreasing there can be an increase in the number of customers that are abroad. However, increased number of exports cannot be the only contributor of profit. Coupled with decreasing value of the money, the profit per sale might get smaller for the company along with more money spent on imported raw materials, machines, equipment etc.
+
+Although the exact relation between two measures is still ambiguous, it might be a good idea to add the monthly indexed export to the previous model. Before the new model is built, it should be noted that the export rate does not show any correlation to the January and December observations. Therefore, to capture the actual effect of this measure, the indexed exports of these months are fixed to 0. This means that, once the export rate is added to the model it can only contribute to the prediction of monthly values other than January and December. With necessary manipulations, the model is obtained as,
+
+```{r, include=TRUE, echo=FALSE}
+liq2017[Month==1 | Month==12, out:=0]
+summary(lm(Firms ~ as.factor(Month) + out, liq2017))
+```
+
+It can be inferred from the summary, that the export is a statistically significant variable. Moreover, with decreased residual standard error and increased adjusted R squared value, it can be stated that the model have become more useful. If the Breusch-Godfrey test for serial correlation is applied,
+
+```{r, include=TRUE, echo=FALSE}
+checkresiduals(lm(Firms ~ as.factor(Month) + out, liq2017))
+```
+
+Although the p-value is not problematic, there seems weak autocorrelations between residuals at small lags. Moreover, consecutive residuals seem to be positively correlated after the first year’s observations. Hence, it might be a good idea to add more regressors to the model.
+
+Following the discussion of economic indicators, the next candidate might be interest rate applied on the commercial loans. It can be stated that, especially in the last few years a lot of the Turkish companies face problems on back payment of loans, with many of them declaring bankruptcy to reschedule their payments by the help of the state banks. Consequently, it is reasonable to assume that with higher interest rates companies are at more risk to liquidate themselves, and the situation might be the opposite with low rates. 
+
+Interest rates applied on commercial loans between years 2014 and 2020 is extracted from the source on EVDS and similar to the indexed export, monthly interest rates are added to the dataset. Once the monthly liquidated firms versus monthly applied interest rates are drawn,
+
+```{r, include=TRUE, echo=FALSE}
+commerce = read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS2.xlsx")
+liquidated[,Loan := as.double(unlist(commerce[1:83,2]))]
+liq2017 = liquidated%>%filter(Year>=4)
+plot(liq2017$Loan, liq2017$Firms, xlab="Monthy Applied Interest Rates", ylab = "Monthly Liquidated Firms",main = "Monthly Liquidated Firms vs. Monthly Interest Rate of Commercial Loans")
+```
+
+It can be observed that, the interest rate applied makes difference only when the rate is above a critical limit, from the plot it can be regarded as 0.2 or 0.22. For observations with lower applied interest rate, there is no clear pattern of correlation between two measures. Consequently, an indicator variable that fixes lower interest rates to 0 while keeping others is added to the dataset and the resultant model is,
+
+```{r, include=TRUE, echo=FALSE}
+liq2017[Loan<22, Loan:=0]
+summary(lm(Firms ~ as.factor(Month) + out + Loan, liq2017))
+```
+
+It can be seen that the indicator variable is statistically significant. Residual standard error value decreased as compared to the previous model while a better adjusted R squared value is yielded. If the Breusch-Godfrey test for serial correlation is applied,
+
+```{r, include=TRUE, echo=FALSE}
+checkresiduals(lm(Firms ~ as.factor(Month) + out + Loan, liq2017))
+```
+
+A better fit for a normal distribution along with seemingly stable variance in residual errors is obtained. Although the p-value have become smaller, there does not seem a statistically significant autocorrelation between residuals.
+
+Before moving on, there are two important points that can be discussed briefly. One is that, it might be more suitable to think that the lagged or the rolled mean values of variables are a better indicator of firms’ performances in real life. However, this logic did not prove successful on this case as it was experimented with exports on report and with interest rates, although not mentioned. In real life, the impact of economic variables are probably much more complex and dominant in the long run. Moreover in real life, it is highly probable that the variables affect liquidation of firms not by pure interaction but coupled with a lot of indicators or the differences or ratios in levels to the long run averages might be more profound in the effect. Nevertheless, this kind of analysis calls for more advanced knowledge of economic situation and market dynamics of Turkey. Since the aim of the study is to come up with an acceptable model for prediction by use of statistical means, these details are omitted. Finally, it should be noted that as opposed to export index, the interest rate of January and December months are not eradicated from the model. It can be seen from the previous scatter plot that only two observations in these months have above-the-critical interest rate level and though there are not enough data, both these observations exhibit a linear relation between the target and regressor variable.
+
+Although the model at hand seem to be useful, a final variable can be added. Following the discussion of the indexed export values, exchange rate of TRY to some other currencies might reveal a missing pattern. It might be practical to find a currency that is representative of other currencies in terms of its value in TRY and the frequency in which the currency is used in business operations of Turkish firms. USD is thought of as a suitable candidate for the goal and USD/TRY Exchange Rate between 2014 and 2020 is gathered from the source at EVDS. Similar to the indexed export, two variables of USD/TRY Exchange Rate is added to the dataset. One indicating a four month moving average exchange rate and the other is the monthly average exchange rate. If the scatter plot of four month rolled average USD/TRY exchange rate versus monthly liquidated firms is visualized,
+
+```{r, include=TRUE, echo=FALSE}
+exrate = as.data.table(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS3.xlsx"))
+liquidated[,USD:=0]
+liquidated[1:83,USD := as.double(unlist(exrate[1:83,2]))]
+liquidated[,avg_USD := rollmean(USD, k=4, fill=NA, align="right")]
+liq2017 = liquidated%>%filter(Year>=4)
+
+plot(liq2017$avg_USD, liq2017$Firms, xlab="Four Month Average Exchange Rate", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Four Month Average Exchange Rate(USD/TRY)")
+```
+
+It can be seen that there is not a clear pattern in observations with exchange rates below 5. Although, there might be a positive relationship between the two measures above this rate, the observations are highly scattered for a model to be built. Moving on with the scatter plot of monthly USD/TRY exchange rate versus monthly liquidated firms,
+
+```{r, include=TRUE, echo=FALSE}
+plot(liq2017$USD, liq2017$Firms, xlab="USD/TRY Exchange Rate", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Exchange Rate(USD/TRY)")
+```
+
+A similar situation occurs in this case too. Instead of trying to force a model, a more representative currency might be searched. After a little investigation, it is found that Russia and China are more dominant compared to other countries in business deals of Turkish firms. Hence, instead of USD/TRY exchange rate, Russian currency to TRY exchange rate is gathered from the source EVDS. Since moving average of USD did not reveal any additional pattern, only monthly observations of Russian Ruble to TRY is added to the dataset.  If the RUS/TRY exchange rate versus monthly liquidated firms are plotted,
+
+```{r, include=TRUE, echo=FALSE}
+exrate2 = as.data.table(read_xlsx("C:/Users/ŞAHİN ÇETİN/Desktop/EVDS6.xlsx"))
+liquidated[,RUS:=0]
+liquidated[1:83,RUS := as.double(unlist(exrate2[1:83,2]))]
+liq2017 = liquidated%>%filter(Year>=4)
+
+plot(liq2017$RUS, liq2017$Firms, xlab="RUS/TRY Exchange Rate", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Exchange Rate(RUS/TRY)")
+```
+
+It can be examined that, for the rates above 0.07 there might be a linear relationship between two measures. Clearly, this indicated that the performance of the firms are negatively affected by the sharp increases in exchange rate. It might be a good idea to add this exchange rate to the model at hand,
+
+```{r, include=TRUE, echo=FALSE}
+liq2017[,RUS2:=RUS]
+liq2017[RUS<0.07, RUS2:=0]
+summary(lm(Firms ~ as.factor(Month) + out + Loan + RUS2, liq2017))
+```
+
+It can be argued that the added variable have become somehow weak to explain a further variability in the model, as can be interpreted by the specific p-value and difference in residual standard error. This might be the case because the variable might already be correlated to another variable in the model thus falling short of bringing any additional effect. It is actually trivial knowledge that, the interest rates are highly correlated to the exchange rates. Due to this behavior, it might be useful to choose one of exchange rate or interest rate as an indicator variable.
+
+Before the decision, a variable indicating the year can be added to the model. This variable can be used to capture the variability in 2017 and 2020 observations. If factored years are added,
+
+
+```{r, include=TRUE, echo=FALSE}
+summary(lm(Firms ~ as.factor(Month) + as.factor(Year) + out + Loan, liq2017))
+```
+
+This model provides improved adjusted R squared and residual standard error values. However with the addition of years, the variable representing high interest rates lost its significance. That is probably dues to the fact that high interest rates occurred consecutively in one of the years and did not occur in any of the other years. Once the year is added as the regressor, the variable might gave lost its meaning. However, by examining the dataset it can be observed that the large exchange rate values are not limited to only a year. Thus, a model excluding interest rate and including Russian Ruble/TRY Exchange Rate might yield better performance,
+
+```{r, include=TRUE, echo=FALSE}
+summary(lm(Firms ~ as.factor(Month) + as.factor(Year) + out + RUS2, liq2017))
+```
+
+It can be stated that most of the regressors of the model are statistically significant. Moreover, the far-best residual error and adjusted R squared values are found. Although there are some years where the coefficient is not significant, the variable can be left as that since the effects in 2017 and 2020 seem to be captured. To serve this purpose, the Breusch-Godfrey test for serial correlation will be used,
+
+```{r, include=TRUE, echo=FALSE}
+checkresiduals(lm(Firms ~ as.factor(Month) + as.factor(Year) + out + RUS2, liq2017))
+```
+
+By the findings, there seems to be no serial correlation that is statistically significant. Moreover, the residuals can be easily fitted to a normal distribution. The volatility of residuals in Year 2020 is reduced. Nonetheless, in the last few months of 2017 the errors have become volatile. As a good model with minimal error and acceptable residual statistics has been found. The discussion will be continued by commenting on findings that will be obtained by applying the model on the dataset.
+
+
+## Residual Analysis
+
+Before the fitted versus actual observations are plotted, it would be sensible to plot errors against the observed regressor values. 
+
+```{r, include=TRUE, echo=FALSE}
+model = lm(Firms ~ as.factor(Month) + as.factor(Year) + out + RUS2, liq2017)
+liq2017[,fit:=fitted(model)]
+liq2017[,residual:=residuals(model)]
+
+plot(liq2017$residual, liq2017$Firms, xlab="Residuals", ylab = "Monthly Liquidated Firms", main = "Monthly Liquidated Firms vs. Residuals of Proposed Model")
+```
+
+It can be seen from the plot that the residuals are scattered randomly with respect to the monthly numbers. There only seems a partial linear relation with some of the observations between 1000 and 1500, the residuals are increasing with the amount of monthly liquidated firms. Maybe building an autoregressive model might have eased this case. However, if that was the case the use of economic indicators would probably be unnecessary and the methodology of the study would have been changed.
+
+```{r, include=TRUE, echo=FALSE}
+plot(liq2017$residual, liq2017$out, xlab="Residuals", ylab = "Monthly Exports Indexed to 2010", main = "Monthly Exports vs. Residuals of Proposed Model")
+```
+
+The residuals are perfectly scattered with respect to the monthly indexed exports. This supports the claim that the role of the variable indicating monthly export was truly added to the model.
+
+```{r, include=TRUE, echo=FALSE}
+plot(liq2017$residual, liq2017$RUS, xlab="Residuals", ylab = "Monthly RUS/TRY Exchange Rate", main = "Monthly Exchange Rate (RUS/TRY) vs. Residuals of Proposed Model")
+```
+
+It can be inferred from the plot that the residuals do not show any correlation to the exchange rate. Thus, a comment similar to the one of export can be made.
+
+```{r, include=TRUE, echo=FALSE}
+plot(liq2017$residual, liq2017$Month, xlab="Residuals", ylab = "Months", main = "Months vs. Residuals of Proposed Model")
+```
+When the plot is examined, it can be observed that the residuals are in general scattered for each month. In most of the months the model has performed good and in some of the months there are unforeseen outlier residuals.
+
+It should be noted that since there are few years in the data, the residuals versus year plot is omitted. 
+
+## Fitted Values
+
+```{r, include=TRUE, echo=FALSE}
+cols = c("forecast" = "orange", "actual" = "darkgreen")
+ggplot() +
+  geom_line(data=liq2017, aes(x=Date, y=fit, color="forecast"), lwd=1) +
+  geom_line(data=liq2017, aes(x=Date, y=Firms, color="actual"), lwd=1) +
+  labs(title = "Predicted vs. Actual Number of Monthly Liquidated Firms in Turkey 2017-2020", 
+                             x = "Date",
+                             y = "Amount Liquidated") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_manual(values = cols)
+  
+```
+
+The plot reveals that, the model has a good fit. For a short period in late 2017 and in summer and autumn 2020, the model were a little bit inadequate to predict the actually observed number of liquidated firms. The deviation in 2017 is probably due to the different characteristic of this season compared to the other years' last few months and that this difference was not a result of a difference or spike in one of the models' regressor variables. 
+
+The deviation in 2020's values were discussed at the beginning of the study and were rather unforeseen. It should be kept in mind that with wider knowledge of economic tools and market dynamics in Turkey, the model might have been better adjusted to predict 2020 observations.
+
+## Conclusion
+
+In this study, a statistically acceptable model that is able to predict monthly liquated number of firms in Turkey with minimal residual error was obtained by trial and error.
+
+It can be stated that the model might have been improved by the use of more regressors and autoregressive variables. However, as discussed previously, the aim was to observe and analyze the relation between some economic indicators to the target variable and the seasonality or cyclic behavior within the variable itself. Therefore, as this kind of analysis would require much more advanced knowledge of economic tools, the model can be regarded as suitable and adequate. Furthermore, the use of autoregressive variables is ignored to better illustrate the efficiency and ease in the use of economic indicators.
+
+##   References
+[EVDS Web Site](https://evds2.tcmb.gov.tr/)
+  •   [R data.table Cheat Sheet](https://s3.amazonaws.com/assets.datacamp.com/blog_assets/datatable_Cheat_Sheet_R.pdf)
+  •   [R lubridate Cheat Sheet](https://evoldyn.gitlab.io/evomics-2018/ref-sheets/R_lubridate.pdf)
+  •   [Data Visualization](http://www.sthda.com/english/)
+  •   [Other Questions](https://stackoverflow.com/)
+
+##   Appendices
+[Here](https://bu-ie-360.github.io/fall20-nilufercetin/files/HMW3.Rmd) the RMD File including the code chunks can be found.
