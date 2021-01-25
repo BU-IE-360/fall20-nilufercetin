@@ -1,0 +1,279 @@
+---
+title: "Stationarity of Turkish Electricity Consumption Data"
+author: "Nilüfer Çetin  - IE360 - Fall 2020"
+date: "25 01 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In Turkey, similar to many other parts of the world, the production and distribution of the electricity in a day is regulated via some pre-determined amounts assigned to specific distributors in a market structure. The market is governed by EPIAS and there are a lot of rules set by EPIAS that are related to the production and assignment of the electricity in the market. Moreover, EPIAS provides lots of useful data related to the market in [EPIAS Transperency Platform](https://seffaflik.epias.com.tr/transparency/tuketim/gerceklesen-tuketim/gercek-zamanli-tuketim.xhtml) for sake of transparency and to prevent cheating or uncooperative behaviors that can reduce the efficiency of the market.
+
+An agent in the market, whether producer or distributor, faces a number of decisions each day such as how much to electricity to declare as to be produced or the maximum amount of price that can be paid in exchange of a unit of electricity for tomorrow etc. Maximizing profits calls for better and more efficient decisions. Therefore, predicting behaviors of other agents, situation of the market in near future and the possible amount of electricity that can be supplied becomes an important tool to facilitate the decision making. 
+
+One of the principal examples of these predicted data is Hourly Consumed Amount of Electricity. It can be claimed that forecasting this series is a procedure that have gained popularity among industrial organizations as well as academy in the last few years. Thus, there are wide-range of tools developed to serve the purpose. Most of the tools make use of either machine learning powered by regression or time series approaches.
+
+The aim of this study is to transform the daily amount of electricity consumption in Turkey over 2017-2021 to stationary series by means of time series approaches or differencing via examining and testing the series by the use of proper tools and tests. To serve this aim, the time series data will repeatedly be analyzed by plotting and useful tests. By using the results derived, the possible differencing or decomposition models will be discussed and some chosen ones will be executed on the series. Then the data will be checked again for stationarity. Once a favorable and adequate enough approach is obtained, daily consumption levels between 09.01.2021-23.01.2021 will be forecasted using Moving Average and Auto Regressive Models and the errors of the forecast will be gathered to comment on the efficiency and ease of use of the approaches.
+
+## Stationarity of the Data
+
+```{r cars, include=FALSE}
+library(readxl)
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(urca)
+library(ggplot2)
+
+consumption = as.data.table(read_xls("C:/Users/ŞAHİN ÇETİN/Desktop/Tuketim.xls"))
+str(consumption)
+colnames(consumption) = c("Date", "Hour", "Amount")
+consumption[,Amount:=gsub(".","",Amount, fixed=TRUE)]
+consumption[,Amount:=as.double(gsub(",",".",Amount, fixed=TRUE))]
+str(consumption)
+dailyCons1 = as.data.table(consumption %>% group_by(Date) %>% summarise(daily_mean = mean(Amount)))
+dailyCons1[,Date:=as.Date(dmy(Date))]
+str(dailyCons1)
+dailyCons1 = dailyCons1 %>% arrange(Date)
+```
+
+Once the data is obtained from EPIAS platform and the required libraries are downloaded, the environment is ready. Since hourly data is provided, the data is aggregated to a daily level by using the daily mean. The aggregation can be carried out by sum function also, however to work with smaller and less complicated numbers mean is chosen. It should be useful to plot the daily time series,
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(dailyCons1, aes(x=Date, y=daily_mean)) +
+        geom_line(size = 0.6, color="violetred3") +
+        labs(title = "Daily Consumed Electricity (mWh) in Turkey over 2017-2021", 
+             x = "Date",
+             y = "Daily Consumed Electricity (mWh)") +
+        scale_x_date(date_breaks = "4 months") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It is obvious from the plot that there is seasonality in the series, with extremely high levels in summer and lowest levels almost always seen in late springs or early autumns. The only outlier cluster in the data occurs between March 2020 and June 2020, signaling a decrease in the levels possibly related to decreased industrial activity triggered by lockdowns. Moreover, it should be stated that nearly all of the change in the levels have happened thorough the time so there are not much sudden increases or decreases in the levels. This finding may help with the use of differencing approaches that make use of lagged values. Since in the short runs the levels do not seem to change drastically, the series that can be obtained by differences between levels might contain less variance and thus be a better candidate for stationarity. 
+
+As lagged values are supposed as reliable tools that can be used in the transformation of the series, it would be appropriate to have a better understanding of auto correlation between these lagged values,
+
+```{r, include=TRUE, echo=FALSE}
+plot(acf(dailyCons1$daily_mean, lag.max = 30, plot=FALSE), main = "Autocorrelation of Daily Mean Electricity Consumption", 
+     col="purple", lwd=2, xlab="Lag in Days") 
+```
+
+From this graph, it can be seen that profound positive autocorrelation exists even in the long runs. Furthermore, lag 7 seems to be as important as lag 1, indicating a strong weekly seasonality. It should be noted that high autocorrelation in some runs might be leading to other autocorrelations being higher too. Thus, to clarify the exact effects of seasonality a partial auto-correlation function of the series is needed,
+
+```{r, include=TRUE, echo=FALSE}
+plot(pacf(dailyCons1$daily_mean, lag.max = 30, plot=FALSE), main = "Partial Autocorrelation of Daily Mean Electricity Consumption", 
+     col="turquoise", lwd=2, xlab="Lag in Days") 
+```
+
+It is obvious that most of the effects are visible within a week where lag 1 and lag 7 observations have more dominance. Although there seems a strong negative correlation in lag 8, it is safer to assume that the produced amount is highly affected by continuous and similar weather conditions in lag 1 and the consumption behaviors of the same days of the week are clearly similar as indicated in lag 7.  The negative correlation of lag 8 might indicate a negative relationship after the previously mentioned relationships are extracted from the data, however it can be assumed that these two lags (1 and 7) can be a good enough approximation to model the time series already and the difference might be small.
+
+To take advantage of these results, each day can be given a base forecast using the lag 1 and lag 7 observations. In many cases, the difference between the actual observation and the forecast can be assumed as a residual since it is claimed that these lags can be actually enough to cover the future value. By taking the difference between the observation and the forecast, the distribution of the residuals might be obtained. Since being residuals these differences are expected to distribute normally with zero mean and specific variance. Hopefully, after this transformation the series might resemble a stationary distribution with some outliers that will be discussed and properly eliminated in the upcoming parts.
+
+To obtain a forecast, adding the effect of two lags with respect to their relative autocorrelation statics have seemed to be reasonable. From the previously drawn graphs, it can be assumed that there is a 3:2 ratio between the effects of lag1 and lag7. Consequently, the forecast will be obtained by summing up %60 of the observed value of the previous day and %40 of the observed value of the last week’s same day. 
+```{r, include=FALSE}
+dailyCons1 = as.data.table(consumption %>% group_by(Date) %>% summarise(daily_mean = mean(Amount)))
+dailyCons1[,Date:=as.Date(dmy(Date))]
+str(dailyCons1)
+dailyCons1 = dailyCons1 %>% arrange(Date)
+
+dailyCons1[,lag1:=shift(daily_mean,1)]
+dailyCons1[,lag7:=shift(daily_mean,7)]
+dailyCons1[,diff1_7:=daily_mean-0.4*lag7-0.6*lag1]
+```
+
+Once the necessary manipulations have been done, the plot of the differenced series can be drawn,
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(dailyCons1, aes(x=Date, y=diff1_7)) +
+        geom_line(size = 0.6, color="steelblue2") +
+        labs(title = "Differences between Daily Consumed Electricity and its Forecast (mWh) in Turkey over 2017-2021", 
+             x = "Date",
+             y = "Difference (mWh)") +
+        scale_x_date(date_breaks = "4 months") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It can be commented that the series have become to resemble more as of a stationary one. The existence of the outlier values are probably related to the observations made in national and religious holidays in which consumption levels get considerably lowered, therefore effecting the differenced values of the next day and 7 days ahead. For now, once these outliers are excluded from the discussion, it can be seen that there are slight trends in some parts of the data, where the difference in the consumption levels weakly increase or decrease for a specified period of time. However, it should be noted that there also occurs observations that are not in accordance with the overall trend of the period. The existence of such behavior can prevents the data from having a strong auto correlation at small lags, thus it might facilitate the transformation to stationary. 
+
+The plot have also revealed that the variance of differences do not vary over time, another desired characteristic of stationary series. Although the plot shows satisfactory transformation, before moving on with outlier handling, some assumptions related to the stationary distribution should be checked for this particularly transformed series. Stationary data should distribute normally and to help this purpose the histogram of the differenced observations are visualized,
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(dailyCons1, aes(x=diff1_7)) +
+        geom_histogram(aes(y=..density..), colour="purple", fill="plum1", bins = 15)+ 
+        geom_density(alpha=.2, fill="tan2", colour="brown") +
+        labs(title = "Histogram of Daily Differenced Electricity Consumption (mWh) in Turkey over 2017-2020", 
+             x = "Daily Differenced Electricity Consumption (mWh)",
+             y = "Density") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+By observing the histogram, it can be claimed that the data is highly similar to a normal distribution with mean close to 0. The outlier values at the both ends of the spectrum seem to be symmetric. In fact if mean is checked,
+
+```{r, include=TRUE, echo=FALSE}
+mean(dailyCons1[8:1469]$diff1_7)
+```
+
+It should be noted that a mean as 5, where some outliers are close to +/- 10000 can be accepted as adequate. Another assumption of the stationary series is that the observations should not be serially correlated with each other. To check this assumption,
+
+```{r, include=TRUE, echo=FALSE}
+plot(acf(dailyCons1[8:1469]$diff1_7, lag.max = 30, plot=FALSE), main = "Autocorrelation of the Differenced Daily Mean Electricity Consumption", 
+     col="darkorchid1", lwd=2, xlab="Lag in Days") 
+```
+
+Although the series are modeled with respect to lag 1 and 7 values, the effect of weekly seasonality and day ahead values are still present in the series. To decrease the weekly seasonality, the coefficient of lag 7 in the derivation of the differenced value can be increased. However, this lead to the model being less adequate to catch the effect of previous day’s consumption. Increasing both coefficients together might probably decrease the mean to a value farther away from zero since the model takes differences by subtracting the forecast from the actual observation. It can be commented that the situation here is kind of a compromise between the two lagged values. Since the aim is not to forecast the data but actually transform it into a stationary series, further adjustment of the coefficients is not needed for this study.
+
+Lastly, Unit Root KPSS test can be executed on the series to check if the assumption of stationarity is violated, in other words can be rejected,
+
+
+```{r, include=TRUE, echo=FALSE}
+dailyCons1[8:1469]$diff1_7%>%ur.kpss()%>%summary()
+```
+
+The associated p-value is rather small and it is obvious that the null hypothesis that “The series is stationary!” cannot be rejected at any of the critical significance levels. To obtain a smaller and hopefully better static, outlier values can be handled.
+
+## Outliers and Further Models
+
+Fixing the outliers require lots of manual work. Nevertheless, it is a well-known fact that in the Turkish Electricity Market, those values occur in national holidays, religious holidays, election days, first days of a new year, days preceding or succeeding a holiday that are given as holidays or in which people tend to cancel their jobs to extend holiday duration to go to vacation and in days with mass exams. To help with the purpose, not all but some of these days are gathered and marked as special.
+
+```{r, include=FALSE}
+dailyCons1[,Day:=wday(Date)]
+##sunday 1, saturday 7
+dailyCons1[,special:=0]
+dailyCons1[(((month(Date)==4 & day(Date)==23)|(month(Date)==5 & day(Date)==19)|(month(Date)==7 & day(Date)==15)|
+                    (month(Date)==8 & day(Date)==30)|(month(Date)==10 & day(Date)==29))&Day!=1&Day!=7), special:=1]
+
+dailyCons1[(((month(Date)==4 & day(Date)==24)|(month(Date)==5 & day(Date)==20)|(month(Date)==7 & day(Date)==16)|
+                    (month(Date)==8 & day(Date)==31)|(month(Date)==10 & day(Date)==30))&Day==6), special:=1]
+
+dailyCons1[(((month(Date)==4 & day(Date)==22)|(month(Date)==5 & day(Date)==18)|(month(Date)==7 & day(Date)==14)|
+                    (month(Date)==8 & day(Date)==29)|(month(Date)==10 & day(Date)==28))&Day==2), special:=1]
+
+dailyCons1[(((month(Date)==6 & day(Date)==26)|(month(Date)==6 & day(Date)==27)|(month(Date)==8 & day(Date)==31)|
+                    (month(Date)==9 & day(Date)==1)|(month(Date)==9 & day(Date)==1))&Day!=1&Day!=7&year(Date)==2017), special:=1]
+
+dailyCons1[(((month(Date)==6 & day(Date)==14)|(month(Date)==6 & day(Date)==15)|(month(Date)==8 & day(Date)==20)|
+                    (month(Date)==8 & day(Date)==21)|(month(Date)==8 & day(Date)==22)|(month(Date)==8 & day(Date)==23)|
+                    (month(Date)==8 & day(Date)==24))&Day!=1&Day!=7&year(Date)==2018), special:=1]
+
+dailyCons1[(((month(Date)==6 & day(Date)==3)|(month(Date)==6 & day(Date)==4)|(month(Date)==6 & day(Date)==5)|
+                    (month(Date)==6 & day(Date)==6)|(month(Date)==6 & day(Date)==7)|(month(Date)==8 & day(Date)==12)|
+                    (month(Date)==8 & day(Date)==13)|(month(Date)==8 & day(Date)==14))&Day!=1&Day!=7&year(Date)==2019), special:=1]
+
+dailyCons1[(((month(Date)==5 & day(Date)==25)|(month(Date)==5 & day(Date)==26)|(month(Date)==7 & day(Date)==30)|
+                    (month(Date)==7 & day(Date)==31)|(month(Date)==8 & day(Date)==8))&Day!=1&Day!=7&year(Date)==2020), special:=1]
+dailyCons1[(month(Date)==1&day(Date)==1)&Day!=1&Day!=7, special:=1]
+```
+
+The next step is to provide a reasonable observation for these probably outlier days. There are actually various ways to obtain such a value however since the data is already gathered, approximating a normal consumption by using the mean of 7 days before and 7 days ahead consumption is preferred for this task. 
+
+```{r, include=FALSE}
+dailyCons1[,normal:=daily_mean]
+dailyCons1[,week_after:=shift(daily_mean,-7)]
+dailyCons1[special==1, normal:=(lag7+week_after)/2]
+
+dailyCons1[,lag1_new:=shift(normal,1)]
+dailyCons1[,lag7_new:=shift(normal,7)]
+dailyCons1[,diff1_7_new:=normal-0.4*lag7_new-0.6*lag1_new]
+```
+
+Once these values are gathered, it should be sensible to recalculate the differenced values by using the normalized values for special days. When the series are visualized after these steps,
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(dailyCons1, aes(x=Date, y=diff1_7_new)) +
+        geom_line(size = 0.6, color="sienna2") +
+        labs(title = "Differences between Daily Consumed Electricity and its Forecast excluding Outliers (mWh) in Turkey over 2017-2021", 
+             x = "Date",
+             y = "Difference (mWh)") +
+        scale_x_date(date_breaks = "4 months") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The variance within the series seem to be reduced along with reduced number of outliers. Because fixing is done manually, not all of the outlier values could be covered as can be seen from the plot. Moreover, there might be some outliers occurring in weekends that are assumed to be non-special. Once checked, the mean of the differenced series is again nearly 5. If a histogram is drawn,
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(dailyCons1, aes(x=diff1_7_new)) +
+        geom_histogram(aes(y=..density..), colour="rosybrown", fill="pink", bins = 15)+ 
+        geom_density(alpha=.2, fill="lemonchiffon2", colour="orangered3") +
+        labs(title = "Histogram of Differences between Daily Consumed Electricity and its Forecast excluding Outliers (mWh) in Turkey over 2017-2021", 
+             x = "Difference (mWh)",
+             y = "Density") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It can be seen that the distribution is resembling a normal distribution with a little negative skewness. This situation might have arisen due to mistakenly treating a day as special because it was a holiday whereas the day did not show such behavior. Nevertheless, exceptions do not break the rules. If an autocorrelation plot is obtained,
+
+```{r, include=TRUE, echo=FALSE}
+plot(acf(dailyCons1[8:1469]$diff1_7_new, lag.max = 30, plot=FALSE), main = "Autocorrelation of the Differenced Daily Mean Electricity Consumption Outliers Excluded", 
+     col="hotpink2", lwd=2, xlab="Lag in Days")
+```
+
+It can be seen that the serial correlation at lag 1 have been eliminated by detecting most of the outliers. This fact clearly shows that most of the serial correlation in the differenced series was due to the extreme values occurring at single day holidays that highly affect the difference between the day the holiday and it precedes. Although the model was successful in grasping this behavior, the weekly auto correlation in the series is still persistent. To eliminate such a situation, a bigger coefficient might have been given to the lag 7 observation in the first model. Nonetheless, when the Unit Root KPSS test is applied,
+
+```{r, include=TRUE, echo=FALSE}
+dailyCons1[8:1469]$diff1_7_new%>%ur.kpss()%>%summary()
+```
+
+It can be seen that the test statistic is still a lot smaller than the critical boundary values, so the assumption of stationary cannot be easily rejected.
+
+
+After that point the existence of a profound serial correlation at lag 7, 14 and so on might be a little hard to neglect. The variance is already much smaller and elimination of many of the outlier observations have interacted with serial correlation of lag 1 in a favorable way to decrease it. As a result, to decrease the weekly seasonality of the differenced series, a higher coefficient to lag 7 can be given, such as 0.65. Once the transformation is done that way,
+
+
+```{r, include=TRUE, echo=FALSE}
+dailyCons1[,diff1_7_new:=normal-0.65*lag7_new-0.35*lag1_new]
+ggplot(dailyCons1, aes(x=Date, y=diff1_7_new)) +
+        geom_line(size = 0.6, color="chocolate") +
+        labs(title = "Differences between Daily Consumed Electricity and its Forecast excluding Outliers (mWh) in Turkey over 2017-2021", 
+             x = "Date",
+             y = "Difference (mWh)") +
+        scale_x_date(date_breaks = "4 months") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+It can be seen that the variance of the series have somewhat increased to a still negligible extent. Moreover, the effect of deleting outlier observations have become less pronounced since these observations are experimentally more related to the lag 1 values. 
+
+```{r, include=TRUE, echo=FALSE}
+ggplot(dailyCons1, aes(x=diff1_7_new)) +
+        geom_histogram(aes(y=..density..), colour="azure4", fill="slategray1", bins = 15)+ 
+        geom_density(alpha=.2, fill="violet", colour="violetred") +
+        labs(title = "Histogram of Differences between Daily Consumed Electricity and its Forecast excluding Outliers (mWh) in Turkey over 2017-2021", 
+             x = "Difference (mWh)",
+             y = "Density") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+A similar histogram of the data is gathered with mean 6 that can be approximated to 0. If an auto-correlation plot is obtained,
+
+```{r, include=TRUE, echo=FALSE}
+plot(acf(dailyCons1[8:1469]$diff1_7_new, lag.max = 30, plot=FALSE), main = "Autocorrelation of the Differenced Daily Mean Electricity Consumption Outliers Excluded", 
+     col="lightsalmon1", lwd=2, xlab="Lag in Days")
+```
+
+It is obvious that the auto-correlation at lag 1 have increased. Still this model seems to be handling the weekly seasonality in the data better than the previous one, as the correlations at weekly lags have become much smaller and nearly negligible just like lag 1 auto-correlation.  
+
+## Discussion
+
+There are various paths that can be followed when dealing with the daily consumption of electricity data. Apart from few exogenous factors, the series is highly correlated within itself. Moreover, the series are highly seasonal within a week and a year. Coupled with auto-correlation at the day ahead behavior, it might get hard to grasp all these characteristics using a time series or differencing approach while working with the data. 
+
+Although it can be argued that using an additive or multiplicative time series approach to decompose the data might have yielded better results in some metrics, the creativity and the degree of freedom with seasonality of these approaches are rather limited. Moreover, it can be stated that the data do not show much trend in some seasons, so the power introduced by using such decomposing models might have been hindered. 
+
+Using a differencing approach have eased the process of catching the weekly seasonality and continuous day ahead effects within the series. Though it can be argued that the yearly seasonality of the series is not handled, the fact that the levels move smoothly even when there is a trend have helped since the series used differencing. It can be claimed that, at the final series the most problematic part is the handling of auto-correlation at lag 7. However, use of lagged values with better adjusted coefficients might alleviate this problem. Nevertheless, this approaches are well beyond the scope of this study.
+
+
+```{r, include=FALSE}
+dailyCons1[8:1469]$diff1_7_new%>%ur.kpss()%>%summary()
+```
+
+
+## Including Plots

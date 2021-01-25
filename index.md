@@ -12,6 +12,10 @@
 
 [Here](files/HMW2.html) is my interesting 3 measure correlation study using R !
 
-## Week 10 / Homework 2 (Jan 10)
+## Week 10 / Homework 3 (Jan 10)
 
 [Here](files/HMW3.html) is my interesting linear regression study using R !
+
+## Week 13 / Homework 4 (Jan 25)
+
+[Here](files/HMW4.html) is my interesting time series differencing study using R !
