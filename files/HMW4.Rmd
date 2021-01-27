@@ -28,6 +28,7 @@ library(dplyr)
 library(lubridate)
 library(urca)
 library(ggplot2)
+library(forecast)
 
 consumption = as.data.table(read_xls("C:/Users/ŞAHİN ÇETİN/Desktop/Tuketim.xls"))
 str(consumption)
@@ -225,11 +226,11 @@ dailyCons1[8:1469]$diff1_7_new%>%ur.kpss()%>%summary()
 It can be seen that the test statistic is still a lot smaller than the critical boundary values, so the assumption of stationary cannot be easily rejected.
 
 
-After that point the existence of a profound serial correlation at lag 7, 14 and so on might be a little hard to neglect. The variance is already much smaller and elimination of many of the outlier observations have interacted with serial correlation of lag 1 in a favorable way to decrease it. As a result, to decrease the weekly seasonality of the differenced series, a higher coefficient to lag 7 can be given, such as 0.65. Once the transformation is done that way,
+After that point the existence of a profound serial correlation at lag 7, 14 and so on might be a little hard to neglect. The variance is already much smaller and elimination of many of the outlier observations have interacted with serial correlation of lag 1 in a favorable way to decrease it. As a result, to decrease the weekly seasonality of the differenced series, a higher coefficient to lag 7 can be given, such as 0.67. Once the transformation is done that way,
 
 
 ```{r, include=TRUE, echo=FALSE}
-dailyCons1[,diff1_7_new:=normal-0.65*lag7_new-0.35*lag1_new]
+dailyCons1[,diff1_7_new:=normal-0.67*lag7_new-0.33*lag1_new]
 ggplot(dailyCons1, aes(x=Date, y=diff1_7_new)) +
         geom_line(size = 0.6, color="chocolate") +
         labs(title = "Differences between Daily Consumed Electricity and its Forecast excluding Outliers (mWh) in Turkey over 2017-2021", 
@@ -253,14 +254,27 @@ ggplot(dailyCons1, aes(x=diff1_7_new)) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-A similar histogram of the data is gathered with mean 6 that can be approximated to 0. If an auto-correlation plot is obtained,
+A similar histogram of the data is gathered with mean 7 that can be approximated to 0. 
+
+```{r, include=TRUE, echo=FALSE}
+dailyCons1[8:1469]$diff1_7_new%>%ur.kpss()%>%summary()
+```
+
+It can be stated that the statistic related to the stationarity assumption is still small, so we are not able to reject the null assumption that the data is stationary. If an auto-correlation plot is obtained,
 
 ```{r, include=TRUE, echo=FALSE}
 plot(acf(dailyCons1[8:1469]$diff1_7_new, lag.max = 30, plot=FALSE), main = "Autocorrelation of the Differenced Daily Mean Electricity Consumption Outliers Excluded", 
      col="lightsalmon1", lwd=2, xlab="Lag in Days")
 ```
 
-It is obvious that the auto-correlation at lag 1 have increased. Still this model seems to be handling the weekly seasonality in the data better than the previous one, as the correlations at weekly lags have become much smaller and nearly negligible just like lag 1 auto-correlation.  
+It is obvious that the auto-correlation at lag 1 have increased. Still this model seems to be handling the weekly seasonality in the data better than the previous one, as the correlations at weekly lags have become much smaller and nearly negligible. Lastly, partial auto-correlation function can be checked,
+
+```{r, include=TRUE, echo=FALSE}
+plot(pacf(dailyCons1[8:1469]$diff1_7_new, lag.max = 30, plot=FALSE), main = "Partial Autocorrelation of the Differenced Daily Mean Electricity Consumption Outliers Excluded", 
+     col="wheat2", lwd=2, xlab="Lag in Days")
+```
+
+From this plot, it can be stated that on most of the lags, partial auto-correlations are negligible. Although seasonality within a week seems to be better captured by the model, the day of the week effect seems to be still persistent. This might be due to the initial assumption of the series being fundamentally auto-correlated at small lags which have led to working on these effects. It can be claimed that this approach have in general fallen short of grasping the relations at further lags as can be seen from lag 15, 22 and 29 partial auto-correlations. Nevertheless, indicated by the other statistical measures it can be accepted as enough as a basic model.
 
 ## Discussion
 
@@ -268,12 +282,101 @@ There are various paths that can be followed when dealing with the daily consump
 
 Although it can be argued that using an additive or multiplicative time series approach to decompose the data might have yielded better results in some metrics, the creativity and the degree of freedom with seasonality of these approaches are rather limited. Moreover, it can be stated that the data do not show much trend in some seasons, so the power introduced by using such decomposing models might have been hindered. 
 
-Using a differencing approach have eased the process of catching the weekly seasonality and continuous day ahead effects within the series. Though it can be argued that the yearly seasonality of the series is not handled, the fact that the levels move smoothly even when there is a trend have helped since the series used differencing. It can be claimed that, at the final series the most problematic part is the handling of auto-correlation at lag 7. However, use of lagged values with better adjusted coefficients might alleviate this problem. Nevertheless, this approaches are well beyond the scope of this study.
+Using a differencing approach have eased the process of catching the weekly seasonality and continuous day ahead effects within the series. Though it can be argued that the yearly seasonality of the series is not handled, the fact that the levels move smoothly even when there is a trend have helped since the series used differencing. It can be claimed that, at the final series the most problematic part is the handling of auto-correlation at further lags. However, use of more lagged values with better adjusted coefficients might alleviate this problem. Nevertheless, these approaches are well beyond the scope of this study.
 
+## Use of ARIMA Models
 
-```{r, include=FALSE}
-dailyCons1[8:1469]$diff1_7_new%>%ur.kpss()%>%summary()
+Before any forecasting can be applied, a practical way to forecast the assumed stationary series should be found. Devising an approach to this problem, by the use of a function ARIMA models with various parameters will be tested on the model and the model with the smallest AICc statistic will be selected, indicating a better fit.
+
+```{r, include=TRUE, echo=FALSE}
+model = auto.arima(dailyCons1[,diff1_7_new],seasonal = FALSE)
+model
 ```
 
+Although there are several acceptable models that can be executed on the series to forecast, ARIMA(2,0,3) model is selected indicating that the differenced series can be decomposed as using 2 of the lagged values and 3 different values obtained by taking the averages of several errors made in past predictions. From the "ar1" coefficient it can be stated that the series' reversal to the mean level of previous observations is rather slow. Moreover, regarding the coefficients, it can be commented that there occurs some kind of spikes in the series randomly and the effects of these behaviors are smoothed as the time proceeds.
+
+## Forecasting
+
+Once the model is found, a forecast of the differenced series for the period of 9-23 January can be obtained. By taking the inverse of the previous differentiations, that is adding observations of 1 and 7 days multiplied with previously set coefficients to the forecast, a forecast of daily mean amount of electricity consumption in the desired period can be found. Forecasts of the stationary assumed series for the declared 14 days are, 
+
+```{r, include=TRUE, echo=FALSE}
+forecasted = forecast(model,h=15)
+print(forecasted)
+```
+
+After the differenced part of the series are predicted, using the realized consumption with lagged values to re-difference the series, actual forecasted amounts can be yielded. Before forecasting the components of the forecast can be seen for some days as,
+
+```{r, include=FALSE}
+fore = as.data.table(read.csv("C:/Users/ŞAHİN ÇETİN/Desktop/Son.csv"))
+str(fore)
+colnames(fore) = c("Date", "Hour", "Amount")
+fore[,Amount:=gsub(".","",Amount, fixed=TRUE)]
+fore[,Amount:=as.double(gsub(",",".",Amount, fixed=TRUE))]
+str(fore)
+fore = as.data.table(fore %>% group_by(Date) %>% summarise(daily_mean = mean(Amount)))
+fore[,Date:=as.Date(dmy(Date))]
+str(fore)
+fore = fore %>% arrange(Date)
+fore[,lag1:=shift(daily_mean,1)]
+fore[,lag7:=shift(daily_mean,7)]
+fore = fore[8:22]
+fore$WN = forecasted$mean
+```
+
+```{r, include=TRUE, echo=FALSE}
+head(fore,8)
+```
+
+The realized values and predictions can be seen along with the residuals,
+
+```{r, include=TRUE, echo=FALSE}
+fore[,forecast:=0.67*lag7 + 0.33*lag1 + WN]
+fore[,residual:=daily_mean-forecast]
+fore%>%select(Date, daily_mean, forecast, residual)
+```
+
+If a plot is visualized,
+
+```{r, include=TRUE, echo=FALSE, warning=FALSE}
+cols = c("forecast" = "maroon2", "actual" = "goldenrod1")
+ggplot() +
+  geom_line(data=fore, aes(x=Date, y=forecast, color="forecast"), lwd=1) +
+  geom_line(data=fore, aes(x=Date, y=daily_mean, color="actual"), lwd=1) +
+  labs(title = "Predicted vs. Actual Daily Electricity Consumption", 
+                             x = "Date",
+                             y = "Consumption (mWh)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_manual(values = cols)
+  
+```
+
+It is obvious that the model have usually underestimated the consumption levels. Nonetheless, there are considerable difference between the consumption levels of these consecutive weeks. The created model might be lacking a fast moving average component that may facilitate fine-tuning of changing levels in short runs.
+
+Furthermore, it can be said that Mondays are the days in which the forecasts fall furthest behind of the realized consumption. In almost any week, the consumption at Sundays get considerably lower because of weekend break. Hence, when imposing the correlation with day before to the model, Mondays might have been the days that are affected in the most unfavorable way, coming after a day with not much resemblance in consumption behavior. This simple situation actually reveals a disadvantage of the time series model in forecasting. Though marking the lag 1 observations might have yielded a better model, it was not possible to adjust the effect by a different coefficient for Mondays, resulting in an over-generalization. To check other statistical measures for goodness of fit,
+
+```{r, include=TRUE, echo=FALSE}
+accuracy = function(actual, error){
+n = length(actual)
+mean = mean(actual)
+sd = sd(actual)
+FBias = sum(error)/sum(actual)
+MAPE = sum(abs(error/actual))/n
+MAD = sum(abs(error))/n
+WMAPE = MAD / mean
+r = data.frame(n, mean, sd, error, FBias, MAPE, MAD, WMAPE)
+return(r[1,])
+}
+
+accuracy(fore$daily_mean, fore$residual)
+```
+
+The test statistics seem to be small. However, it should be noted that there are no clear tabulated values to compare the statistics and decide if a good fit or prediction has been obtained. The comparison might have been done with respect to one of the previously discussed models. Yet, for each model the steps involved are rather long and complicated. Consequently, to show that a clear improvement is made upon a basic algorithm, simple moving average can be used. The statistics below are obtained by forecasting each day as the last week's same day, 
+
+```{r, include=TRUE, echo=FALSE}
+fore[,ma:=daily_mean-lag1]
+
+accuracy(fore$daily_mean, fore$ma)
+```
 
 ## Including Plots
