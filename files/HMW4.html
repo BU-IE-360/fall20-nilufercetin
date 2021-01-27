@@ -547,8 +547,21 @@ summary {
 <pre><code>##    n     mean       sd     error      FBias       MAPE      MAD      WMAPE
 ## 1 15 36951.79 2500.597 -2092.337 -0.0022339 0.05336438 1913.406 0.05178115</code></pre>
 </div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>In this study, the series of daily electricity consumption in Turkey was examined and tried to be stationarized by use of possible and appropriate time series approaches. The methods involved multiple differencing with respect to special lagged values. Although this choice is discussed thoroughly in the other parts, it can be said that the model developed were effective at capturing and eliminating most prominent seasonality factors.</p>
+<p>It can be stated that use of time series or transformation operations are adequate opinions that should be considered while dealing with time series data of whose inner structure and relations to exogenous factors are rather unknown or cannot be obtained. These approaches are fast, practical and do not require much knowledge about the domain in which the series reside in.</p>
+<p>A stationary test is assumed to be gathered in an iterative manner by use of visual and statistical analysis that are carried out via drawing several plots and executing tests such as Unit Root KPSS. By introducing differencing at lag 1 and lag 7, the effects of previous day and day of the week were eliminated from the series. However, these eliminations were limited to some extent by one each other and introducing a higher degree of coefficient to one of the lags resulted in less weight given to another. Hence, the resultant differenced series suffered from some degree of auto-correlation. Moreover, the only effects captured were the ones in the short run. It can be stated that with better adjustment of parameters and introducing further transformations that can be enabled by more detailed examination of the serial correlation within observations, a model in which the rejection of stationarity assumption can be even harder might have been obtained. Nevertheless, the presented transformation can be accepted as an adequate one that uses power of auto-correlation in this scope of study.</p>
+<p>Once the differenced series are obtained, by utilizing ARIMA models and inversing the transformations daily forecasts for the period of 9-23 January are created. As proven by the performance measures shown in the previous parts, it can be claimed that the performance of the model is improved with respect to simple moving average models that are accepted as the most basic approach in forecasting or gathering information from time series. However, as discussed in the previous parts, most of the forecasts fell behind of the actual observed amount, indicating lack of speed of the model in tracing the level. Another finding was that the differenced models might involve over-generalizations that can impair performance for some specific periods in the exchange of better prediction for more of them.</p>
+<p>It can be said that the time series approaches are practical and useful in most cases where the inner works of the data are not known or highly complicated to the researcher. Nevertheless, these tools are far from yielding a comprehensive and detailed model on the prediction side, leading to errors or unexplained behavior that tends to remain while forecasting.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p><a href="https://seffaflik.epias.com.tr/transparency/tuketim/gerceklesen-tuketim/gercek-zamanli-tuketim.xhtml">EPIAS Transperency Web Site</a> • <a href="https://s3.amazonaws.com/assets.datacamp.com/blog_assets/datatable_Cheat_Sheet_R.pdf">R data.table Cheat Sheet</a> • <a href="http://sape.inf.usi.ch/quick-reference/ggplot2/colour">Colors</a> • <a href="https://stackoverflow.com/">Other Questions</a></p>
+</div>
+<div id="appendices" class="section level2">
+<h2>Appendices</h2>
+<p><a href="https://bu-ie-360.github.io/fall20-nilufercetin/files/HMW4.Rmd">Here</a> the RMD File including the code chunks can be found.</p>
 </div>
 
 
