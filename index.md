@@ -20,6 +20,10 @@
 
 [Here](files/HMW4.html) is my interesting time series differencing study using R !
 
+## Week Finals / Final Report (Feb 7)
+
+[Here](files/IE360Final.html) is the final report !
+
 ## Week Post Finals / Project Report (Feb 15)
 
 [Here](files/IE360Project-Group6.html) is the project report !
